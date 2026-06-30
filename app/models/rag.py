@@ -57,6 +57,17 @@ class ResponseMetadata(BaseModel):
     generation_model_id: str
 
 
+class WorkflowMetadata(BaseModel):
+    """Request-local workflow execution metadata."""
+
+    status: str
+    retrieval_attempts: int
+    max_retrieval_attempts: int
+    route: list[str]
+    rewritten_query: str | None
+    context_sufficient: bool
+
+
 class QueryResponse(BaseModel):
     """Successful POST /query response."""
 
@@ -64,6 +75,7 @@ class QueryResponse(BaseModel):
     citations: list[Citation]
     retrieved_context: list[RetrievedContextItem]
     metadata: ResponseMetadata
+    workflow: WorkflowMetadata
 
 
 class ErrorBody(BaseModel):

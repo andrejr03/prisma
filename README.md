@@ -3,7 +3,7 @@
 
 Prisma is a local-first engineering platform for building production-grade LLM systems.
 
-The repository is currently at Phase 2: baseline RAG API. It can turn a committed sample corpus into a searchable local vector index, retrieve relevant chunks, assemble bounded context, and return deterministic cited answers through a minimal FastAPI endpoint.
+The repository is currently at Phase 3: bounded agent workflow. It can turn a committed sample corpus into a searchable local vector index, route a query through deterministic workflow steps, optionally re-retrieve once with a rewritten query, and return cited answers with workflow metadata through a minimal FastAPI endpoint.
 
 ## Quick Start
 
@@ -45,7 +45,7 @@ python -m pytest
 python -m app.retrieval.index
 ```
 
-Phase 2 tests are correctness tests for ingestion, indexing, retrieval, context assembly, local grounded generation, API schemas, and structured errors. They are not an evaluation harness.
+Phase 3 tests are correctness tests for ingestion, indexing, retrieval, workflow routing, context assembly, local grounded generation, API schemas, and structured errors. They are not an evaluation harness.
 
 ## Documentation
 
@@ -54,4 +54,5 @@ Phase 2 tests are correctness tests for ingestion, indexing, retrieval, context 
 - [Phase 0 repository skeleton plan](docs/PRISMA_PHASE_0_REPOSITORY_SKELETON_PLAN_v0.1.md)
 - [Phase 1 ingestion and indexing plan](docs/PRISMA_PHASE_1_INGESTION_INDEXING_PLAN_v0.1.md)
 - [Phase 2 baseline RAG API plan](docs/PRISMA_PHASE_2_BASELINE_RAG_API_PLAN_v0.1.md)
+- [Phase 3 agent workflow plan](docs/PRISMA_PHASE_3_AGENT_WORKFLOW_PLAN_v0.1.md)
 - [Development guide](docs/DEVELOPMENT.md)

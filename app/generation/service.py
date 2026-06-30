@@ -9,7 +9,13 @@ from typing import Any
 
 from app.config import PrismaSettings
 from app.generation.context import ContextItem, assemble_context
-from app.models.rag import Citation, QueryResponse, ResponseMetadata, RetrievedContextItem
+from app.models.rag import (
+    Citation,
+    QueryResponse,
+    ResponseMetadata,
+    RetrievedContextItem,
+    WorkflowMetadata,
+)
 from app.providers.generation import (
     GenerationProvider,
     GenerationRequest,
@@ -50,6 +56,18 @@ class RagService:
         top_k: int | None = None,
         max_context_chars: int | None = None,
     ) -> QueryResponse:
+        if self.settings.workflow.enabled:
+            from app.workflow.runner import RagWorkflowRunner
+
+            return RagWorkflowRunner(
+                settings=self.settings,
+                generation_provider=self.generation_provider,
+            ).answer(
+                question=question,
+                top_k=top_k,
+                max_context_chars=max_context_chars,
+            )
+
         question = question.strip()
         resolved_top_k = top_k if top_k is not None else self.settings.rag.default_top_k
         resolved_context_chars = (
@@ -96,6 +114,23 @@ class RagService:
                 context_item_count=len(assembled.items),
                 generation_backend=self.settings.generation.backend,
                 generation_model_id=result.model_id,
+            ),
+            workflow=WorkflowMetadata(
+                status="completed",
+                retrieval_attempts=1,
+                max_retrieval_attempts=self.settings.workflow.max_retrieval_attempts,
+                route=[
+                    "validate_query",
+                    "decide_retrieval",
+                    "retrieve_context",
+                    "assess_context",
+                    "assemble_context",
+                    "generate_answer",
+                    "validate_citations",
+                    "finalize_response",
+                ],
+                rewritten_query=None,
+                context_sufficient=True,
             ),
         )
 

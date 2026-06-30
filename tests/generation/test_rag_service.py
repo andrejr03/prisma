@@ -22,6 +22,11 @@ def test_rag_service_returns_grounded_answer_with_citations(phase1_settings):
     assert response.citations[0].source_path == "datasets/sample_corpus/provider-boundaries.md"
     assert response.retrieved_context
     assert response.metadata.generation_backend == "local-grounded"
+    assert response.workflow.status == "completed"
+    assert 1 <= response.workflow.retrieval_attempts <= 2
+    assert response.workflow.max_retrieval_attempts == 2
+    assert response.workflow.route[0] == "validate_query"
+    assert "finalize_response" in response.workflow.route
 
 
 def test_rag_service_rejects_unknown_generated_citations(phase1_settings):

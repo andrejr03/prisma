@@ -1,6 +1,6 @@
 # Development
 
-This repository is in Phase 2. It contains the repository skeleton, local ingestion and indexing for the committed sample corpus, and a baseline RAG API over the local index.
+This repository is in Phase 3. It contains the repository skeleton, local ingestion and indexing for the committed sample corpus, a baseline RAG API over the local index, and a bounded workflow that validates, retrieves, optionally rewrites once, generates, and validates citations.
 
 ## Setup
 
@@ -41,6 +41,8 @@ curl -s \
 
 If the index is missing, `POST /query` returns a structured `503` error with code `index_not_ready`.
 
+Successful responses include the existing answer, citation, context, and metadata fields plus a `workflow` object with the terminal status, route, retrieval attempt count, retry limit, rewritten query, and context sufficiency flag.
+
 ## Checks
 
 ```sh
@@ -74,15 +76,39 @@ print(body["answer"])
 PY
 ```
 
-The tests are code correctness tests for Phases 1 and 2. They are not evaluation scorecards and do not create an evaluation harness.
+Workflow smoke check:
+
+```sh
+python - <<'PY'
+from fastapi.testclient import TestClient
+
+from app.api.main import app
+
+client = TestClient(app)
+response = client.post(
+    "/query",
+    json={"question": "What does Prisma mean by provider boundaries?", "top_k": 4},
+)
+assert response.status_code == 200, response.text
+workflow = response.json()["workflow"]
+assert workflow["status"] == "completed"
+assert 1 <= workflow["retrieval_attempts"] <= 2
+assert workflow["max_retrieval_attempts"] == 2
+assert workflow["route"][0] == "validate_query"
+assert "finalize_response" in workflow["route"]
+print(workflow)
+PY
+```
+
+The tests are code correctness tests for Phases 1 through 3. They are not evaluation scorecards and do not create an evaluation harness.
 
 ## Contribution Boundaries
 
 Follow the approved plans and repository architecture:
 
-- Keep Phase 2 focused on a baseline RAG API.
+- Keep Phase 3 focused on bounded workflow orchestration.
 - Do not create deferred directories before their phase needs them.
-- Do not add agents, chat memory, evals, CI, Docker, hosted services, UI, provider-specific model APIs, or secrets.
-- Keep prompts as data assets under `prompts/`; do not add prompt registries or versioning systems in Phase 2.
+- Do not add open-ended agents, autonomous tool use, multi-agent systems, chat memory, evals, CI, Docker, hosted services, UI, provider-specific model APIs, or secrets.
+- Keep prompts as data assets under `prompts/`; do not add prompt registries or versioning systems in Phase 3.
 - Keep dependencies declared in `pyproject.toml`; do not add `requirements.txt`.
 - Keep secrets and local runtime state out of version control.

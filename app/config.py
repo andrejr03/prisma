@@ -65,6 +65,15 @@ class GenerationSettings:
 
 
 @dataclass(frozen=True)
+class WorkflowSettings:
+    enabled: bool
+    max_retrieval_attempts: int
+    min_context_score: float
+    enable_query_rewrite: bool
+    require_context_token_overlap: bool
+
+
+@dataclass(frozen=True)
 class PrismaSettings:
     repo_root: Path
     paths: PathSettings
@@ -74,6 +83,7 @@ class PrismaSettings:
     api: ApiSettings
     rag: RagSettings
     generation: GenerationSettings
+    workflow: WorkflowSettings
 
     def resolve_path(self, value: str) -> Path:
         path = Path(value)
@@ -129,6 +139,17 @@ def load_settings(config_path: Path | str = DEFAULT_CONFIG_PATH) -> PrismaSettin
     api = _section(data, "api")
     rag = _section(data, "rag")
     generation = _section(data, "generation")
+    workflow = _section(data, "workflow")
+
+    workflow_settings = WorkflowSettings(
+        enabled=_get_bool(workflow, "enabled"),
+        max_retrieval_attempts=_get_int(workflow, "max_retrieval_attempts"),
+        min_context_score=_get_float(workflow, "min_context_score"),
+        enable_query_rewrite=_get_bool(workflow, "enable_query_rewrite"),
+        require_context_token_overlap=_get_bool(workflow, "require_context_token_overlap"),
+    )
+    if workflow_settings.max_retrieval_attempts != 2:
+        raise ValueError("Phase 3 workflow max_retrieval_attempts must be exactly 2")
 
     return PrismaSettings(
         repo_root=PROJECT_ROOT,
@@ -171,6 +192,7 @@ def load_settings(config_path: Path | str = DEFAULT_CONFIG_PATH) -> PrismaSettin
             model_id=_get_str(generation, "model_id"),
             prompt_path=_get_str(generation, "prompt_path"),
         ),
+        workflow=workflow_settings,
     )
 
 
@@ -200,3 +222,10 @@ def _get_float(section: dict[str, Any], key: str) -> float:
     if not isinstance(value, int | float):
         raise ValueError(f"Expected numeric config value for {key}")
     return float(value)
+
+
+def _get_bool(section: dict[str, Any], key: str) -> bool:
+    value = section.get(key)
+    if not isinstance(value, bool):
+        raise ValueError(f"Expected boolean config value for {key}")
+    return value

@@ -25,6 +25,11 @@ def test_query_endpoint_returns_structured_response(phase1_settings):
     assert body["citations"]
     assert body["retrieved_context"]
     assert body["metadata"]["retrieval_top_k"] == 4
+    assert body["workflow"]["status"] == "completed"
+    assert body["workflow"]["retrieval_attempts"] == 1
+    assert body["workflow"]["max_retrieval_attempts"] == 2
+    assert body["workflow"]["route"][0] == "validate_query"
+    assert "finalize_response" in body["workflow"]["route"]
     assert body["citations"][0]["source_document"] == "Provider Boundaries"
     assert body["citations"][0]["source_path"] == "datasets/sample_corpus/provider-boundaries.md"
     assert body["citations"][0]["chunk_id"]
