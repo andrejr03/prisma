@@ -40,12 +40,40 @@ class VectorIndexSettings:
 
 
 @dataclass(frozen=True)
+class ApiSettings:
+    host: str
+    port: int
+
+
+@dataclass(frozen=True)
+class RagSettings:
+    default_top_k: int
+    max_top_k: int
+    min_score: float
+    min_question_chars: int
+    max_question_chars: int
+    max_context_chars: int
+    max_context_chars_hard_limit: int
+    max_answer_sentences: int
+
+
+@dataclass(frozen=True)
+class GenerationSettings:
+    backend: str
+    model_id: str
+    prompt_path: str
+
+
+@dataclass(frozen=True)
 class PrismaSettings:
     repo_root: Path
     paths: PathSettings
     retrieval: RetrievalSettings
     embeddings: EmbeddingSettings
     vector_index: VectorIndexSettings
+    api: ApiSettings
+    rag: RagSettings
+    generation: GenerationSettings
 
     def resolve_path(self, value: str) -> Path:
         path = Path(value)
@@ -64,6 +92,10 @@ class PrismaSettings:
     @property
     def manifest_path(self) -> Path:
         return self.resolve_path(self.paths.manifest_path)
+
+    @property
+    def prompt_path(self) -> Path:
+        return self.resolve_path(self.generation.prompt_path)
 
     def with_overrides(
         self,
@@ -94,6 +126,9 @@ def load_settings(config_path: Path | str = DEFAULT_CONFIG_PATH) -> PrismaSettin
     retrieval = _section(data, "retrieval")
     embeddings = _section(data, "embeddings")
     vector_index = _section(data, "vector_index")
+    api = _section(data, "api")
+    rag = _section(data, "rag")
+    generation = _section(data, "generation")
 
     return PrismaSettings(
         repo_root=PROJECT_ROOT,
@@ -117,6 +152,25 @@ def load_settings(config_path: Path | str = DEFAULT_CONFIG_PATH) -> PrismaSettin
             collection_name=_get_str(vector_index, "collection_name"),
             distance=_get_str(vector_index, "distance"),
         ),
+        api=ApiSettings(
+            host=_get_str(api, "host"),
+            port=_get_int(api, "port"),
+        ),
+        rag=RagSettings(
+            default_top_k=_get_int(rag, "default_top_k"),
+            max_top_k=_get_int(rag, "max_top_k"),
+            min_score=_get_float(rag, "min_score"),
+            min_question_chars=_get_int(rag, "min_question_chars"),
+            max_question_chars=_get_int(rag, "max_question_chars"),
+            max_context_chars=_get_int(rag, "max_context_chars"),
+            max_context_chars_hard_limit=_get_int(rag, "max_context_chars_hard_limit"),
+            max_answer_sentences=_get_int(rag, "max_answer_sentences"),
+        ),
+        generation=GenerationSettings(
+            backend=_get_str(generation, "backend"),
+            model_id=_get_str(generation, "model_id"),
+            prompt_path=_get_str(generation, "prompt_path"),
+        ),
     )
 
 
@@ -139,3 +193,10 @@ def _get_int(section: dict[str, Any], key: str) -> int:
     if not isinstance(value, int):
         raise ValueError(f"Expected integer config value for {key}")
     return value
+
+
+def _get_float(section: dict[str, Any], key: str) -> float:
+    value = section.get(key)
+    if not isinstance(value, int | float):
+        raise ValueError(f"Expected numeric config value for {key}")
+    return float(value)

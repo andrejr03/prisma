@@ -1,6 +1,6 @@
 # Development
 
-This repository is in Phase 1. It contains the repository skeleton plus local ingestion and indexing for the committed sample corpus.
+This repository is in Phase 2. It contains the repository skeleton, local ingestion and indexing for the committed sample corpus, and a baseline RAG API over the local index.
 
 ## Setup
 
@@ -21,9 +21,25 @@ Build the local vector index:
 python -m app.retrieval.index
 ```
 
-Run the same command again to verify idempotency. The second run should report that the index is already up to date.
-
 Generated artifacts are written under `.local/prisma/`, which is ignored by git.
+
+Run the baseline API:
+
+```sh
+uvicorn app.api.main:app --host 127.0.0.1 --port 8000
+```
+
+Send a local query:
+
+```sh
+curl -s \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"question":"What does Prisma mean by provider boundaries?","top_k":4}' \
+  http://127.0.0.1:8000/query
+```
+
+If the index is missing, `POST /query` returns a structured `503` error with code `index_not_ready`.
 
 ## Checks
 
@@ -33,17 +49,40 @@ python -m ruff format --check .
 python -m mypy app
 python -m pytest
 python -m app.retrieval.index
-python -m app.retrieval.index
 ```
 
-The tests are code correctness tests for Phase 1. They are not evaluation scorecards and do not create an evaluation harness.
+API smoke check:
+
+```sh
+python - <<'PY'
+from fastapi.testclient import TestClient
+
+from app.api.main import app
+
+client = TestClient(app)
+response = client.post(
+    "/query",
+    json={"question": "What does Prisma mean by provider boundaries?", "top_k": 4},
+)
+assert response.status_code == 200, response.text
+body = response.json()
+assert body["answer"]
+assert body["citations"]
+assert body["citations"][0]["source_path"] == "datasets/sample_corpus/provider-boundaries.md"
+assert body["citations"][0]["chunk_id"]
+print(body["answer"])
+PY
+```
+
+The tests are code correctness tests for Phases 1 and 2. They are not evaluation scorecards and do not create an evaluation harness.
 
 ## Contribution Boundaries
 
-Follow the Phase 0 skeleton plan and repository architecture:
+Follow the approved plans and repository architecture:
 
-- Keep Phase 1 focused on ingestion and indexing.
+- Keep Phase 2 focused on a baseline RAG API.
 - Do not create deferred directories before their phase needs them.
-- Do not add answer generation, chat, prompts, agents, evals, CI, Docker, hosted services, or secrets.
+- Do not add agents, chat memory, evals, CI, Docker, hosted services, UI, provider-specific model APIs, or secrets.
+- Keep prompts as data assets under `prompts/`; do not add prompt registries or versioning systems in Phase 2.
 - Keep dependencies declared in `pyproject.toml`; do not add `requirements.txt`.
 - Keep secrets and local runtime state out of version control.

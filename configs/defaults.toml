@@ -24,3 +24,22 @@ model_id = "hashing-v1-384"
 backend = "qdrant-local"
 collection_name = "prisma_sample_corpus"
 distance = "cosine"
+
+[api]
+host = "127.0.0.1"
+port = 8000
+
+[rag]
+default_top_k = 4
+max_top_k = 8
+min_score = 0.0
+min_question_chars = 3
+max_question_chars = 500
+max_context_chars = 4000
+max_context_chars_hard_limit = 8000
+max_answer_sentences = 3
+
+[generation]
+backend = "local-grounded"
+model_id = "local-grounded-v1"
+prompt_path = "prompts/baseline_rag.txt"
