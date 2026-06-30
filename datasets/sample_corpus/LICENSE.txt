@@ -1,0 +1,4 @@
+CC0 1.0 Universal
+
+The Prisma sample corpus text in this directory was created for this repository.
+It is dedicated to the public domain under CC0 1.0 Universal.

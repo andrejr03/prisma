@@ -1,0 +1,14 @@
+[corpus]
+id = "prisma-sample-corpus-v1"
+title = "Prisma Sample Corpus"
+license = "CC0-1.0"
+created_for = "Phase 1 ingestion and indexing"
+
+files = [
+  "prisma-overview.md",
+  "local-first-development.md",
+  "retrieval-pipeline.md",
+  "provider-boundaries.md",
+  "configuration-and-secrets.md",
+  "evaluation-discipline.md",
+]

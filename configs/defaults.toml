@@ -7,3 +7,20 @@ log_level = "INFO"
 
 [paths]
 runtime_state = ".local/prisma"
+corpus_path = "datasets/sample_corpus"
+index_path = ".local/prisma/index/qdrant"
+manifest_path = ".local/prisma/index/manifest.json"
+
+[retrieval]
+chunk_size_chars = 900
+chunk_overlap_chars = 150
+
+[embeddings]
+backend = "hashing"
+dimensions = 384
+model_id = "hashing-v1-384"
+
+[vector_index]
+backend = "qdrant-local"
+collection_name = "prisma_sample_corpus"
+distance = "cosine"
