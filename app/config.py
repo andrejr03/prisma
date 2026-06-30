@@ -74,6 +74,14 @@ class WorkflowSettings:
 
 
 @dataclass(frozen=True)
+class EvalSettings:
+    golden_path: str
+    scorecard_path: str
+    baseline_path: str
+    minimum_pass_rate: float
+
+
+@dataclass(frozen=True)
 class PrismaSettings:
     repo_root: Path
     paths: PathSettings
@@ -84,6 +92,7 @@ class PrismaSettings:
     rag: RagSettings
     generation: GenerationSettings
     workflow: WorkflowSettings
+    evals: EvalSettings
 
     def resolve_path(self, value: str) -> Path:
         path = Path(value)
@@ -106,6 +115,18 @@ class PrismaSettings:
     @property
     def prompt_path(self) -> Path:
         return self.resolve_path(self.generation.prompt_path)
+
+    @property
+    def eval_golden_path(self) -> Path:
+        return self.resolve_path(self.evals.golden_path)
+
+    @property
+    def eval_scorecard_path(self) -> Path:
+        return self.resolve_path(self.evals.scorecard_path)
+
+    @property
+    def eval_baseline_path(self) -> Path:
+        return self.resolve_path(self.evals.baseline_path)
 
     def with_overrides(
         self,
@@ -140,6 +161,7 @@ def load_settings(config_path: Path | str = DEFAULT_CONFIG_PATH) -> PrismaSettin
     rag = _section(data, "rag")
     generation = _section(data, "generation")
     workflow = _section(data, "workflow")
+    evals = _section(data, "evals")
 
     workflow_settings = WorkflowSettings(
         enabled=_get_bool(workflow, "enabled"),
@@ -150,6 +172,15 @@ def load_settings(config_path: Path | str = DEFAULT_CONFIG_PATH) -> PrismaSettin
     )
     if workflow_settings.max_retrieval_attempts != 2:
         raise ValueError("Phase 3 workflow max_retrieval_attempts must be exactly 2")
+
+    eval_settings = EvalSettings(
+        golden_path=_get_str(evals, "golden_path"),
+        scorecard_path=_get_str(evals, "scorecard_path"),
+        baseline_path=_get_str(evals, "baseline_path"),
+        minimum_pass_rate=_get_float(evals, "minimum_pass_rate"),
+    )
+    if not 0.0 <= eval_settings.minimum_pass_rate <= 1.0:
+        raise ValueError("Evaluation minimum_pass_rate must be between 0.0 and 1.0")
 
     return PrismaSettings(
         repo_root=PROJECT_ROOT,
@@ -193,6 +224,7 @@ def load_settings(config_path: Path | str = DEFAULT_CONFIG_PATH) -> PrismaSettin
             prompt_path=_get_str(generation, "prompt_path"),
         ),
         workflow=workflow_settings,
+        evals=eval_settings,
     )
 
 

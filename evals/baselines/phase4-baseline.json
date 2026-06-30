@@ -1,0 +1,90 @@
+{
+  "baseline_id": "phase4-baseline",
+  "golden_path": "evals/golden/cases.jsonl",
+  "case_count": 7,
+  "index_fingerprint": "sha256:8906b6c54c352413ff4e98f35f60a8d8b11e722526d6c1dfe30603e85465ff30",
+  "metrics": {
+    "retrieval_source_hit": {
+      "pass": 6,
+      "fail": 0,
+      "not_applicable": 1
+    },
+    "citation_source_hit": {
+      "pass": 6,
+      "fail": 0,
+      "not_applicable": 1
+    },
+    "citation_validity": {
+      "pass": 6,
+      "fail": 0,
+      "not_applicable": 1
+    },
+    "answer_contains_expected_terms": {
+      "pass": 6,
+      "fail": 0,
+      "not_applicable": 1
+    },
+    "no_unsupported_citations": {
+      "pass": 6,
+      "fail": 0,
+      "not_applicable": 1
+    },
+    "workflow_completed": {
+      "pass": 7,
+      "fail": 0,
+      "not_applicable": 0
+    },
+    "workflow_retry_bounded": {
+      "pass": 6,
+      "fail": 0,
+      "not_applicable": 1
+    },
+    "structured_response_validity": {
+      "pass": 7,
+      "fail": 0,
+      "not_applicable": 0
+    }
+  },
+  "cases": [
+    {
+      "id": "provider-boundaries-basic",
+      "passed": true
+    },
+    {
+      "id": "evaluation-discipline-grounded",
+      "passed": true
+    },
+    {
+      "id": "local-first-setup",
+      "passed": true
+    },
+    {
+      "id": "retrieval-pipeline-context",
+      "passed": true
+    },
+    {
+      "id": "configuration-secrets-boundary",
+      "passed": true
+    },
+    {
+      "id": "prisma-overview-goal",
+      "passed": true
+    },
+    {
+      "id": "out-of-corpus-no-context",
+      "passed": true
+    }
+  ],
+  "aggregate": {
+    "cases_passed": 7,
+    "cases_failed": 0,
+    "pass_rate": 1.0,
+    "minimum_pass_rate": 0.8,
+    "meets_minimum": true
+  },
+  "policy": {
+    "routine_scorecard_path": ".local/prisma/evals/scorecard.json",
+    "routine_scorecards_committed": false,
+    "baseline_comparison_enforced": false
+  }
+}

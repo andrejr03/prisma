@@ -50,3 +50,9 @@ max_retrieval_attempts = 2
 min_context_score = 0.0
 enable_query_rewrite = true
 require_context_token_overlap = true
+
+[evals]
+golden_path = "evals/golden/cases.jsonl"
+scorecard_path = ".local/prisma/evals/scorecard.json"
+baseline_path = "evals/baselines/phase4-baseline.json"
+minimum_pass_rate = 0.8
