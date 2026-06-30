@@ -1,0 +1,9 @@
+# Lowest-precedence defaults for local development.
+# Override order: defaults -> named profile -> environment.
+
+[runtime]
+profile = "local"
+log_level = "INFO"
+
+[paths]
+runtime_state = ".local/prisma"
