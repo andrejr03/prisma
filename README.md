@@ -1,15 +1,91 @@
 # Prisma
-> Production LLM Engineering Platform
 
-Prisma is a local-first engineering platform for building production-grade LLM systems.
+> Local-first production LLM engineering platform.
 
-The repository is currently at Phase 6: observability and runtime metrics. It can turn a committed sample corpus into a searchable local vector index, route a query through deterministic workflow steps, return cited answers with workflow and runtime metadata through a minimal FastAPI endpoint, run a local deterministic evaluation harness against committed golden cases, compare prompt-driven behavior against the committed Phase 4 baseline, and inspect generated request-local runtime artifacts.
+Prisma is a reproducible RAG and agent-workflow system that treats LLM behavior like production software: indexed context, cited answers, golden-case evaluation, prompt regression, and request-level runtime observability.
+
+**Status:** Python 3.11+ · Local-first · Phases 0-6 complete · No hosted services required · Design prototype included
+
+![Prisma evaluation command center](assets/screenshots/PRISMA_02_EVALUATION_COMMAND_CENTER.png)
+
+## What Prisma Is
+
+Prisma is a local-first Production LLM Engineering Platform. It is built as a small, reproducible reference system for the operational layer around RAG and bounded agent workflows.
+
+It currently:
+
+- Indexes a committed sample corpus locally.
+- Answers questions through a typed RAG API.
+- Routes requests through a bounded workflow.
+- Measures quality through golden cases.
+- Compares prompt behavior against a committed baseline.
+- Records request-local runtime metrics.
+- Includes a design-only dashboard prototype for inspecting those artifacts.
+
+## Why Prisma Exists
+
+LLM systems do not become reliable through prompts alone. A credible LLM application needs retrieval boundaries, workflow control, evaluation data, regression checks, and runtime observability so behavior can be reviewed and reproduced.
+
+Prisma demonstrates that thesis in one local repository:
+
+- Retrieval provides grounded context.
+- Workflow bounds autonomy and retry behavior.
+- Evaluation defines expected behavior.
+- Prompt regression detects behavior drift.
+- Observability makes a single request inspectable.
+
+## Feature Overview
+
+| Capability | What it demonstrates | Status |
+|---|---|---|
+| Ingestion and indexing | Local corpus loading, chunking, embeddings, Qdrant-local index | Complete |
+| Baseline RAG API | Typed `POST /query`, cited answers, structured errors | Complete |
+| Bounded workflow | Validate, retrieve, assess, rewrite once, generate, validate citations | Complete |
+| Evaluation harness | Golden cases, deterministic metrics, scorecard artifact | Complete |
+| Prompt regression | Prompt fingerprinting, baseline comparison, regression report | Complete |
+| Runtime observability | Runtime block, per-request artifacts, inspection command | Complete |
+| Dashboard prototype | Design-only visual inspection surface for evals, regression, runtime, workflow, citations | Prototype |
+
+## Architecture Overview
+
+Prisma keeps executable application logic in `app/`, data assets in `configs/`, `datasets/`, and `prompts/`, and measurement code in `evals/`. Evaluation observes the system through the public API boundary, runtime artifacts are generated under `.local/prisma/`, and model providers remain behind provider-neutral adapters.
+
+```mermaid
+flowchart TD
+    A["Client / TestClient / curl"] --> B["FastAPI query endpoint"]
+    B --> C["Bounded RAG workflow"]
+    C --> D["Retrieval pipeline"]
+    D --> E["Local Qdrant index"]
+    C --> F["Provider-neutral generation adapter"]
+    C --> G["Citation validation"]
+    B --> H["QueryResponse"]
+    C --> I["Runtime recorder"]
+    I --> J[".local/prisma/runtime artifacts"]
+    K["evals.runner"] --> B
+    L["evals.regression"] --> K
+```
+
+## Dashboard Showcase
+
+The dashboard prototype is a design-only inspection surface for the engineering artifacts Prisma already produces locally: scorecards, prompt-regression reports, runtime metrics, workflow routes, retrieved context, and citations.
+
+| View | What it shows |
+|---|---|
+| ![Engineering overview](assets/screenshots/PRISMA_01_ENGINEERING_OVERVIEW.png) | Engineering Overview: top-level status across evaluation, regression, and runtime surfaces. |
+| ![Evaluation command center](assets/screenshots/PRISMA_02_EVALUATION_COMMAND_CENTER.png) | Evaluation Command Center: integrated quality and operational view used as the README hero. |
+| ![Golden cases](assets/screenshots/PRISMA_03_GOLDEN_CASES.png) | Golden Cases: curated evaluation cases and expected behavior. |
+| ![Prompt regression](assets/screenshots/PRISMA_04_PROMPT_REGRESSION.png) | Prompt Regression: baseline comparison and prompt-change visibility. |
+| ![Runtime metrics](assets/screenshots/PRISMA_05_RUNTIME_METRICS.png) | Runtime Metrics: request-level latency and count summaries. |
+| ![Workflow timeline](assets/screenshots/PRISMA_06_WORKFLOW_TIMELINE.png) | Workflow Timeline: bounded workflow route and stage progression. |
+| ![Request inspector](assets/screenshots/PRISMA_07_REQUEST_INSPECTOR.png) | Request Inspector: local request artifact inspection. |
+| ![Retrieved context](assets/screenshots/PRISMA_08_RETRIEVED_CONTEXT.png) | Retrieved Context: source chunks used to ground an answer. |
+| ![Citation inspector](assets/screenshots/PRISMA_09_CITATION_INSPECTOR.png) | Citation Inspector: citation grounding and retrieved-source traceability. |
 
 ## Quick Start
 
 Prerequisite: Python 3.11 or newer. The examples below use `python3.11`; replace it with the Python 3.11+ executable available on your machine.
 
-```sh
+```bash
 python3.11 -m venv .venv
 source .venv/bin/activate
 python -m pip install -U pip
@@ -18,19 +94,14 @@ python -m app.retrieval.index
 python -m evals.runner
 python -m evals.regression
 python -m app.observability.inspect
-```
-
-Generated index files, the manifest, routine evaluation scorecards, prompt-regression reports, and runtime request artifacts are written under `.local/prisma/` and are not committed.
-
-Run the API locally:
-
-```sh
 uvicorn app.api.main:app --host 127.0.0.1 --port 8000
 ```
 
-Query the API:
+Generated index files, scorecards, regression reports, and runtime request artifacts are written under `.local/prisma/` and ignored by git.
 
-```sh
+Query the local API after starting `uvicorn`:
+
+```bash
 curl -s \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -38,75 +109,133 @@ curl -s \
   http://127.0.0.1:8000/query
 ```
 
-## Local Checks
+## Core Commands
 
-```sh
-python -m ruff check .
-python -m ruff format --check .
-python -m mypy app evals
-python -m pytest
-python -m app.retrieval.index
+| Command | Purpose | Output |
+|---|---|---|
+| `python -m app.retrieval.index` | Build or verify the local vector index | `.local/prisma/index/` |
+| `python -m evals.runner` | Run golden-case evaluation | `.local/prisma/evals/scorecard.json` |
+| `python -m evals.regression` | Compare prompt behavior with the committed baseline | `.local/prisma/evals/regression.json` |
+| `python -m app.observability.inspect` | Inspect the latest runtime request artifact | Console summary from `.local/prisma/runtime/latest-request.json` |
+| `uvicorn app.api.main:app --host 127.0.0.1 --port 8000` | Run the local API | `POST /query` endpoint |
+| `python -m pytest` | Run correctness tests | Test report |
+| `python -m ruff check .` | Lint | Lint report |
+| `python -m mypy app evals` | Type check application and eval code | Type-check report |
+
+## Evaluation
+
+Prisma evaluates behavior with committed golden cases and deterministic metrics.
+
+- Golden cases live at `evals/golden/cases.jsonl`.
+- Metrics are deterministic and implemented in `evals/metrics.py`.
+- Routine scorecards are generated at `.local/prisma/evals/scorecard.json`.
+- The promoted Phase 4 baseline lives at `evals/baselines/phase4-baseline.json`.
+
+Run the evaluation harness:
+
+```bash
 python -m evals.runner
-python -m evals.regression
-python -m app.observability.inspect
 ```
 
-Tests are correctness tests for ingestion, indexing, retrieval, workflow routing, context assembly, local grounded generation, API schemas, structured errors, the evaluation harness, prompt-regression code, and local runtime observability. Evaluation, regression, and runtime inspection remain local-only; they are not CI gates or hosted telemetry.
-
-## Evaluation Harness
-
-Run the local eval smoke path:
-
-```sh
-python -m app.retrieval.index
-python -m evals.runner
-```
-
-The runner loads `evals/golden/cases.jsonl`, exercises `POST /query` through FastAPI `TestClient`, computes deterministic metrics, and writes `.local/prisma/evals/scorecard.json`.
-
-Baseline policy:
-
-- Committed golden data: `evals/golden/cases.jsonl`
-- Committed Phase 4 baseline summary: `evals/baselines/phase4-baseline.json`
-- Generated routine scorecard: `.local/prisma/evals/scorecard.json`
-
-Phase 4 does not add LLM-as-judge, semantic similarity, RAGAS, PromptFoo, dashboards, hosted services, or CI gates.
+The runner exercises `POST /query` through FastAPI `TestClient`, computes metric results, and prints a concise pass-rate summary.
 
 ## Prompt Regression
 
-Run the local prompt-regression smoke path:
+Prompt regression compares current prompt-driven behavior with the committed Phase 4 baseline.
 
-```sh
-python -m evals.runner
+- Prompt fingerprinting tracks the configured prompt asset.
+- The prompt snapshot lives at `evals/baselines/phase4-prompt-snapshot.json`.
+- `python -m evals.regression` compares current evaluation output with the committed baseline.
+- Routine regression reports are generated at `.local/prisma/evals/regression.json`.
+- Regression is informational before Phase 7; it does not introduce a CI gate yet.
+
+Run prompt regression:
+
+```bash
 python -m evals.regression
 ```
 
-The regression runner fingerprints the configured prompt, runs the Phase 4 evaluation harness, compares the generated scorecard with `evals/baselines/phase4-baseline.json`, and writes `.local/prisma/evals/regression.json`.
-
-Regression policy:
-
-- Committed eval baseline: `evals/baselines/phase4-baseline.json`
-- Committed prompt snapshot: `evals/baselines/phase4-prompt-snapshot.json`
-- Generated regression report: `.local/prisma/evals/regression.json`
-
-Prompt regression is informational in Phase 5. It does not add prompt optimization, prompt generation, prompt registries, LLM-as-judge, PromptFoo, dashboards, hosted services, or CI gates.
-
 ## Runtime Observability
 
-By default, successful `POST /query` responses include an additive top-level `runtime` block with request id, stage latencies, retrieval attempts, and citation count. When `[observability].enabled = false`, the response keeps the field as `runtime: null`.
+Successful `POST /query` responses include a compact `runtime` block when observability is enabled. When observability is disabled, the response keeps `runtime: null`.
 
-Full request-local runtime artifacts are generated at:
+Full request-local artifacts are generated at:
 
 - `.local/prisma/runtime/latest-request.json`
 - `.local/prisma/runtime/requests/<request_id>.json`
 
-Inspect the latest artifact after a query or eval run:
+Inspect the latest local runtime artifact:
 
-```sh
+```bash
 python -m app.observability.inspect
 ```
 
-Runtime artifacts are local generated state. They contain stage events, deterministic counts, source paths, workflow route, and neutral generation backend/model ids; they do not contain question text, prompt text, answer text, provider usage, costs, telemetry exports, dashboards, or external endpoints.
+Runtime artifacts contain timings, scalar counts, source paths, workflow route, and neutral generation backend/model IDs. They do not contain question text, prompt text, answer text, secrets, telemetry exports, or provider billing data.
+
+## Repository Structure
+
+```text
+prisma/
+├── app/                  # API, generation, retrieval, workflow, providers, persistence, observability
+├── assets/               # Design prototype archive and dashboard screenshots
+├── configs/              # Non-secret defaults
+├── datasets/             # Sample corpus
+├── docs/                 # Plans, architecture, ADRs, development docs
+├── evals/                # Golden cases, metrics, scorecards, regression
+├── prompts/              # Prompt assets
+├── tests/                # Correctness tests
+├── README.md
+└── pyproject.toml
+```
+
+## Roadmap
+
+| Phase | Focus | Status |
+|---|---|---|
+| Phase 0 | Repository skeleton | Complete |
+| Phase 1 | Ingestion and indexing | Complete |
+| Phase 2 | Baseline RAG API | Complete |
+| Phase 3 | Bounded agent workflow | Complete |
+| Phase 4 | Evaluation harness | Complete |
+| Phase 5 | Prompt regression | Complete |
+| Phase 6 | Observability and runtime metrics | Complete |
+| Current polish | README Showcase Polish | Current |
+| Phase 7 | CI/CD Evaluation Gate | Future |
+
+## What This Demonstrates
+
+Prisma demonstrates:
+
+- Local-first LLM application architecture.
+- RAG over a committed corpus.
+- Provider-neutral adapters.
+- Bounded agent workflow design.
+- Golden-case evaluation.
+- Prompt fingerprinting and regression comparison.
+- Request-level runtime observability.
+- Reproducible Python project structure.
+- Clear architecture and phase documentation.
+
+## Design Prototype
+
+The dashboard assets are included for design communication and review:
+
+- `assets/prisma-prototype-v2.zip` contains the dashboard design prototype archive.
+- Screenshots under `assets/screenshots/` are design showcase assets.
+- The dashboard is design-only and is not a production frontend.
+- The prototype visualizes concepts already represented by local artifacts: scorecards, regression reports, runtime metrics, workflow route, retrieved context, and citations.
+
+## Boundaries / Non-Goals
+
+Prisma keeps its current boundaries explicit:
+
+- No hosted service is required for the default path.
+- No telemetry upload.
+- No CI/CD gate yet.
+- No production dashboard yet.
+- No external provider dependency required by the local default path.
+- No claim that Prisma is used in production.
+- No benchmark-leading or commercial-product claims.
 
 ## Documentation
 
@@ -119,4 +248,5 @@ Runtime artifacts are local generated state. They contain stage events, determin
 - [Phase 4 evaluation harness plan](docs/PRISMA_PHASE_4_EVALUATION_HARNESS_PLAN_v0.1.md)
 - [Phase 5 prompt regression plan](docs/PRISMA_PHASE_5_PROMPT_REGRESSION_PLAN_v0.1.md)
 - [Phase 6 observability runtime metrics plan](docs/PRISMA_PHASE_6_OBSERVABILITY_RUNTIME_METRICS_PLAN_v0.1.md)
+- [README showcase polish plan](docs/PRISMA_README_SHOWCASE_POLISH_PLAN_v0.1.md)
 - [Development guide](docs/DEVELOPMENT.md)
