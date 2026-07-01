@@ -1,6 +1,6 @@
 # Development
 
-This repository is in Phase 5. It contains the repository skeleton, local ingestion and indexing for the committed sample corpus, a baseline RAG API over the local index, a bounded workflow that validates, retrieves, optionally rewrites once, generates, and validates citations, a deterministic local evaluation harness, and an informational prompt-regression runner.
+This repository is in Phase 6. It contains the repository skeleton, local ingestion and indexing for the committed sample corpus, a baseline RAG API over the local index, a bounded workflow that validates, retrieves, optionally rewrites once, generates, and validates citations, a deterministic local evaluation harness, an informational prompt-regression runner, and local request-runtime observability.
 
 ## Setup
 
@@ -57,7 +57,15 @@ curl -s \
 
 If the index is missing, `POST /query` returns a structured `503` error with code `index_not_ready`.
 
-Successful responses include the existing answer, citation, context, and metadata fields plus a `workflow` object with the terminal status, route, retrieval attempt count, retry limit, rewritten query, and context sufficiency flag.
+Successful responses include the existing answer, citation, context, and metadata fields plus a `workflow` object with the terminal status, route, retrieval attempt count, retry limit, rewritten query, and context sufficiency flag. They also include an additive `runtime` object when observability is enabled. When observability is disabled, the response keeps `runtime: null`.
+
+Inspect the latest runtime artifact:
+
+```sh
+python -m app.observability.inspect
+```
+
+The inspection command only reads local JSON artifacts. It does not issue requests, mutate files, access the network, or upload telemetry.
 
 ## Checks
 
@@ -69,6 +77,7 @@ python -m pytest
 python -m app.retrieval.index
 python -m evals.runner
 python -m evals.regression
+python -m app.observability.inspect
 ```
 
 API smoke check:
@@ -132,19 +141,27 @@ python -m evals.regression
 test -f .local/prisma/evals/regression.json
 ```
 
-The tests are code correctness tests for the application, evaluation harness, and prompt-regression harness. The eval and regression runners measure behavior through the public API boundary and produce generated artifacts; they do not enforce CI gates in Phase 5.
+Runtime observability smoke check:
+
+```sh
+python -m app.observability.inspect
+test -f .local/prisma/runtime/latest-request.json
+```
+
+The tests are code correctness tests for the application, evaluation harness, prompt-regression harness, and runtime observability. The eval and regression runners measure behavior through the public API boundary and produce generated artifacts; runtime metrics are informational and do not enforce CI gates in Phase 6.
 
 ## Evaluation Assets
 
-Phase 4 and Phase 5 keep evaluation data, prompt snapshot metadata, and generated artifacts separate:
+Phase 4 through Phase 6 keep evaluation data, prompt snapshot metadata, runtime metadata, and generated artifacts separate:
 
 - Golden cases are committed at `evals/golden/cases.jsonl`.
 - The promoted Phase 4 baseline summary is committed at `evals/baselines/phase4-baseline.json`.
 - The Phase 4 prompt snapshot is committed at `evals/baselines/phase4-prompt-snapshot.json`.
 - Routine scorecards are generated at `.local/prisma/evals/scorecard.json` and remain ignored by git.
 - Routine prompt-regression reports are generated at `.local/prisma/evals/regression.json` and remain ignored by git.
+- Runtime request artifacts are generated at `.local/prisma/runtime/latest-request.json` and `.local/prisma/runtime/requests/<request_id>.json` and remain ignored by git.
 
-Do not overwrite committed baselines or prompt snapshots during routine eval or regression runs. Promote a new baseline only as an explicit reviewed change.
+Do not overwrite committed baselines or prompt snapshots during routine eval or regression runs. Do not commit runtime artifacts. Promote a new baseline only as an explicit reviewed change.
 
 ## Contribution Boundaries
 
@@ -153,8 +170,9 @@ Follow the approved plans and repository architecture:
 - Keep existing Phase 3 workflow behavior unchanged unless a later approved plan says otherwise.
 - Keep Phase 4 focused on deterministic local evaluation through the public API boundary.
 - Keep Phase 5 focused on deterministic, informational prompt regression.
+- Keep Phase 6 focused on local request-runtime metrics and generated `.local/prisma/runtime/` artifacts.
 - Do not create deferred directories before their phase needs them.
-- Do not add open-ended agents, autonomous tool use, multi-agent systems, chat memory, CI, Docker, hosted services, dashboards, LLM-as-judge metrics, RAGAS, PromptFoo, provider comparisons, UI, provider-specific model APIs, runtime observability, cost metrics, latency metrics, or secrets.
+- Do not add open-ended agents, autonomous tool use, multi-agent systems, chat memory, CI, Docker, hosted services, dashboards, LLM-as-judge metrics, RAGAS, PromptFoo, provider comparisons, UI, provider-specific model APIs, real token billing, cost billing integrations, telemetry upload, external monitoring, or secrets.
 - Keep prompts as data assets under `prompts/`; do not add prompt registries, prompt generation, prompt optimization, or prompt tuning in Phase 5.
 - Keep dependencies declared in `pyproject.toml`; do not add `requirements.txt`.
 - Keep secrets and local runtime state out of version control.

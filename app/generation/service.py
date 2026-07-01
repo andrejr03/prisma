@@ -16,12 +16,14 @@ from app.models.rag import (
     RetrievedContextItem,
     WorkflowMetadata,
 )
+from app.observability.runtime import RuntimeRecorder
 from app.providers.generation import (
     GenerationProvider,
     GenerationRequest,
+    UnsupportedGenerationBackendError,
     create_generation_provider,
 )
-from app.retrieval.search import retrieve_chunks
+from app.retrieval.search import IndexNotReadyError, retrieve_chunks
 
 _CITATION_MARKER_RE = re.compile(r"\[(\d+)]")
 
@@ -56,17 +58,43 @@ class RagService:
         top_k: int | None = None,
         max_context_chars: int | None = None,
     ) -> QueryResponse:
-        if self.settings.workflow.enabled:
-            from app.workflow.runner import RagWorkflowRunner
+        runtime_recorder = RuntimeRecorder.from_settings(self.settings)
+        runtime_recorder.start_request()
+        try:
+            if self.settings.workflow.enabled:
+                from app.workflow.runner import RagWorkflowRunner
 
-            return RagWorkflowRunner(
-                settings=self.settings,
-                generation_provider=self.generation_provider,
-            ).answer(
-                question=question,
-                top_k=top_k,
-                max_context_chars=max_context_chars,
-            )
+                response = RagWorkflowRunner(
+                    settings=self.settings,
+                    generation_provider=self.generation_provider,
+                    runtime_recorder=runtime_recorder,
+                ).answer(
+                    question=question,
+                    top_k=top_k,
+                    max_context_chars=max_context_chars,
+                )
+            else:
+                response = self._answer_without_workflow(
+                    question=question,
+                    top_k=top_k,
+                    max_context_chars=max_context_chars,
+                    runtime_recorder=runtime_recorder,
+                )
+        except Exception as exc:
+            runtime_recorder.fail_request(_runtime_error_code(exc))
+            raise
+
+        return runtime_recorder.complete_response(response)
+
+    def _answer_without_workflow(
+        self,
+        *,
+        question: str,
+        top_k: int | None,
+        max_context_chars: int | None,
+        runtime_recorder: RuntimeRecorder,
+    ) -> QueryResponse:
+        """Run the pre-workflow RAG path with passive runtime instrumentation."""
 
         question = question.strip()
         resolved_top_k = top_k if top_k is not None else self.settings.rag.default_top_k
@@ -75,64 +103,90 @@ class RagService:
             if max_context_chars is not None
             else self.settings.rag.max_context_chars
         )
-        self._validate_request(
-            question=question,
-            top_k=resolved_top_k,
-            max_context_chars=resolved_context_chars,
-        )
+        with runtime_recorder.stage("validate_query", error_code="invalid_request"):
+            self._validate_request(
+                question=question,
+                top_k=resolved_top_k,
+                max_context_chars=resolved_context_chars,
+            )
 
-        chunks = retrieve_chunks(self.settings, question=question, top_k=resolved_top_k)
+        runtime_recorder.record_retrieval_attempts(1)
+        with runtime_recorder.stage("retrieve_context", error_code="index_not_ready") as span:
+            chunks = retrieve_chunks(self.settings, question=question, top_k=resolved_top_k)
+            span.set_details({"attempt": 1, "retrieved_count": len(chunks)})
         if not chunks:
             raise NoContextError("No context was retrieved for the question.")
 
-        assembled = assemble_context(chunks, max_context_chars=resolved_context_chars)
-        if not assembled.items:
-            raise NoContextError("No context was available after assembly.")
+        with runtime_recorder.stage("assemble_context", error_code="no_context") as span:
+            assembled = assemble_context(chunks, max_context_chars=resolved_context_chars)
+            runtime_recorder.record_context(context=assembled.context)
+            span.set_details(
+                {
+                    "context_item_count": len(assembled.items),
+                    "context_char_count": len(assembled.context),
+                }
+            )
+            if not assembled.items:
+                raise NoContextError("No context was available after assembly.")
 
         provider = self._generation_provider()
-        result = provider.generate(
-            GenerationRequest(
-                question=question,
-                prompt=_load_prompt(self.settings.prompt_path),
-                context=assembled.context,
-                context_items=assembled.items,
-                max_answer_sentences=self.settings.rag.max_answer_sentences,
+        with runtime_recorder.stage("generate_answer") as span:
+            prompt = _load_prompt(self.settings.prompt_path)
+            runtime_recorder.record_prompt(prompt=prompt)
+            result = provider.generate(
+                GenerationRequest(
+                    question=question,
+                    prompt=prompt,
+                    context=assembled.context,
+                    context_items=assembled.items,
+                    max_answer_sentences=self.settings.rag.max_answer_sentences,
+                )
             )
-        )
-        cited_ids = _validate_citations(
-            answer=result.answer,
-            cited_context_ids=result.cited_context_ids,
-            context_items=assembled.items,
-        )
+            span.set_details(
+                {
+                    "generation_backend": self.settings.generation.backend,
+                    "generation_model_id": result.model_id,
+                }
+            )
+        with runtime_recorder.stage("validate_citations", error_code="invalid_citations") as span:
+            cited_ids = _validate_citations(
+                answer=result.answer,
+                cited_context_ids=result.cited_context_ids,
+                context_items=assembled.items,
+            )
+            span.set_detail("citation_count", len(cited_ids))
 
-        return QueryResponse(
-            answer=result.answer,
-            citations=_citations_for(assembled.items, cited_ids),
-            retrieved_context=_retrieved_context_items(assembled.items),
-            metadata=ResponseMetadata(
-                retrieval_top_k=resolved_top_k,
-                context_item_count=len(assembled.items),
-                generation_backend=self.settings.generation.backend,
-                generation_model_id=result.model_id,
-            ),
-            workflow=WorkflowMetadata(
-                status="completed",
-                retrieval_attempts=1,
-                max_retrieval_attempts=self.settings.workflow.max_retrieval_attempts,
-                route=[
-                    "validate_query",
-                    "decide_retrieval",
-                    "retrieve_context",
-                    "assess_context",
-                    "assemble_context",
-                    "generate_answer",
-                    "validate_citations",
-                    "finalize_response",
-                ],
-                rewritten_query=None,
-                context_sufficient=True,
-            ),
-        )
+        route = [
+            "validate_query",
+            "decide_retrieval",
+            "retrieve_context",
+            "assess_context",
+            "assemble_context",
+            "generate_answer",
+            "validate_citations",
+            "finalize_response",
+        ]
+        runtime_recorder.record_workflow_route(route)
+        with runtime_recorder.stage("finalize_response"):
+            return QueryResponse(
+                answer=result.answer,
+                citations=_citations_for(assembled.items, cited_ids),
+                retrieved_context=_retrieved_context_items(assembled.items),
+                metadata=ResponseMetadata(
+                    retrieval_top_k=resolved_top_k,
+                    context_item_count=len(assembled.items),
+                    generation_backend=self.settings.generation.backend,
+                    generation_model_id=result.model_id,
+                ),
+                workflow=WorkflowMetadata(
+                    status="completed",
+                    retrieval_attempts=1,
+                    max_retrieval_attempts=self.settings.workflow.max_retrieval_attempts,
+                    route=route,
+                    rewritten_query=None,
+                    context_sufficient=True,
+                ),
+            )
 
     def _validate_request(
         self,
@@ -245,3 +299,17 @@ def _retrieved_context_items(items: list[ContextItem]) -> list[RetrievedContextI
         )
         for item in items
     ]
+
+
+def _runtime_error_code(exc: Exception) -> str:
+    if isinstance(exc, InvalidQueryError):
+        return "invalid_request"
+    if isinstance(exc, IndexNotReadyError):
+        return "index_not_ready"
+    if isinstance(exc, NoContextError):
+        return "no_context"
+    if isinstance(exc, CitationValidationError):
+        return "invalid_citations"
+    if isinstance(exc, UnsupportedGenerationBackendError):
+        return "unsupported_generation_backend"
+    return "internal_error"

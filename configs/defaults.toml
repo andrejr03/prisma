@@ -51,6 +51,12 @@ min_context_score = 0.0
 enable_query_rewrite = true
 require_context_token_overlap = true
 
+[observability]
+enabled = true
+runtime_dir = ".local/prisma/runtime"
+write_latest = true
+write_per_request = true
+
 [evals]
 golden_path = "evals/golden/cases.jsonl"
 scorecard_path = ".local/prisma/evals/scorecard.json"

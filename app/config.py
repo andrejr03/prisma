@@ -74,6 +74,14 @@ class WorkflowSettings:
 
 
 @dataclass(frozen=True)
+class ObservabilitySettings:
+    enabled: bool
+    runtime_dir: str
+    write_latest: bool
+    write_per_request: bool
+
+
+@dataclass(frozen=True)
 class EvalSettings:
     golden_path: str
     scorecard_path: str
@@ -99,6 +107,7 @@ class PrismaSettings:
     rag: RagSettings
     generation: GenerationSettings
     workflow: WorkflowSettings
+    observability: ObservabilitySettings
     evals: EvalSettings
     prompt_regression: PromptRegressionSettings
 
@@ -181,6 +190,7 @@ def load_settings(config_path: Path | str = DEFAULT_CONFIG_PATH) -> PrismaSettin
     rag = _section(data, "rag")
     generation = _section(data, "generation")
     workflow = _section(data, "workflow")
+    observability = _section(data, "observability")
     evals = _section(data, "evals")
     prompt_regression = _section(data, "prompt_regression")
 
@@ -193,6 +203,13 @@ def load_settings(config_path: Path | str = DEFAULT_CONFIG_PATH) -> PrismaSettin
     )
     if workflow_settings.max_retrieval_attempts != 2:
         raise ValueError("Phase 3 workflow max_retrieval_attempts must be exactly 2")
+
+    observability_settings = ObservabilitySettings(
+        enabled=_get_bool(observability, "enabled"),
+        runtime_dir=_get_str(observability, "runtime_dir"),
+        write_latest=_get_bool(observability, "write_latest"),
+        write_per_request=_get_bool(observability, "write_per_request"),
+    )
 
     eval_settings = EvalSettings(
         golden_path=_get_str(evals, "golden_path"),
@@ -254,6 +271,7 @@ def load_settings(config_path: Path | str = DEFAULT_CONFIG_PATH) -> PrismaSettin
             prompt_path=_get_str(generation, "prompt_path"),
         ),
         workflow=workflow_settings,
+        observability=observability_settings,
         evals=eval_settings,
         prompt_regression=prompt_regression_settings,
     )

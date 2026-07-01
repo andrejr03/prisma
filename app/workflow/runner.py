@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -18,6 +19,9 @@ from app.generation.service import (
     _validate_citations,
 )
 from app.models.rag import QueryResponse, ResponseMetadata
+from app.observability.models import RuntimeStage
+from app.observability.runtime import RuntimeRecorder
+from app.observability.timing import StageSpan
 from app.providers.generation import (
     GenerationProvider,
     GenerationRequest,
@@ -49,6 +53,7 @@ class RagWorkflowRunner:
     generation_provider: GenerationProvider | None = None
     retriever: ChunkRetriever | None = None
     prompt_loader: PromptLoader = _load_prompt
+    runtime_recorder: RuntimeRecorder | None = None
 
     def answer(
         self,
@@ -70,22 +75,27 @@ class RagWorkflowRunner:
             max_retrieval_attempts=self.settings.workflow.max_retrieval_attempts,
         )
 
-        self._validate_query(state)
-        self._decide_retrieval(state)
-        self._retrieve_until_sufficient(state)
-        self._assemble_context(state)
-        self._generate_answer(state)
-        cited_ids = self._validate_citations(state)
-        return self._finalize_response(state, cited_ids)
+        try:
+            self._validate_query(state)
+            self._decide_retrieval(state)
+            self._retrieve_until_sufficient(state)
+            self._assemble_context(state)
+            self._generate_answer(state)
+            cited_ids = self._validate_citations(state)
+            return self._finalize_response(state, cited_ids)
+        except Exception:
+            self._record_runtime_workflow_state(state)
+            raise
 
     def _validate_query(self, state: WorkflowState) -> None:
         try:
-            _validate_request(
-                settings=self.settings,
-                question=state.original_question,
-                top_k=state.top_k,
-                max_context_chars=state.max_context_chars,
-            )
+            with self._runtime_stage("validate_query", error_code="invalid_request"):
+                _validate_request(
+                    settings=self.settings,
+                    question=state.original_question,
+                    top_k=state.top_k,
+                    max_context_chars=state.max_context_chars,
+                )
         except InvalidQueryError as exc:
             state.final_status = "validation_failed"
             state.record_event(
@@ -148,13 +158,21 @@ class RagWorkflowRunner:
 
     def _retrieve_context(self, state: WorkflowState) -> None:
         state.retrieval_attempts += 1
+        self._record_runtime_retrieval_attempts(state)
         try:
             retriever = self.retriever or _retrieve_chunks
-            state.retrieved_chunks = retriever(
-                self.settings,
-                state.active_query,
-                state.top_k,
-            )
+            with self._runtime_stage("retrieve_context", error_code="index_not_ready") as span:
+                state.retrieved_chunks = retriever(
+                    self.settings,
+                    state.active_query,
+                    state.top_k,
+                )
+                span.set_details(
+                    {
+                        "attempt": state.retrieval_attempts,
+                        "retrieved_count": len(state.retrieved_chunks),
+                    }
+                )
         except IndexNotReadyError:
             state.final_status = "index_not_ready"
             state.record_event(
@@ -204,18 +222,26 @@ class RagWorkflowRunner:
         )
 
     def _assemble_context(self, state: WorkflowState) -> None:
-        assembled = assemble_context(
-            state.retrieved_chunks,
-            max_context_chars=state.max_context_chars,
-        )
-        if not assembled.items:
-            state.final_status = "no_context"
-            state.record_event(
-                node=_ASSEMBLE_CONTEXT,
-                status="failed",
-                message="No context was available after assembly.",
+        with self._runtime_stage("assemble_context", error_code="no_context") as span:
+            assembled = assemble_context(
+                state.retrieved_chunks,
+                max_context_chars=state.max_context_chars,
             )
-            raise NoContextError("No context was available after assembly.")
+            self._record_runtime_context(assembled.context)
+            span.set_details(
+                {
+                    "context_item_count": len(assembled.items),
+                    "context_char_count": len(assembled.context),
+                }
+            )
+            if not assembled.items:
+                state.final_status = "no_context"
+                state.record_event(
+                    node=_ASSEMBLE_CONTEXT,
+                    status="failed",
+                    message="No context was available after assembly.",
+                )
+                raise NoContextError("No context was available after assembly.")
 
         state.assembled_context = assembled.context
         state.context_items = assembled.items
@@ -228,15 +254,24 @@ class RagWorkflowRunner:
 
     def _generate_answer(self, state: WorkflowState) -> None:
         provider = self._generation_provider()
-        state.generation_result = provider.generate(
-            GenerationRequest(
-                question=state.original_question,
-                prompt=self.prompt_loader(self.settings.prompt_path),
-                context=state.assembled_context,
-                context_items=state.context_items,
-                max_answer_sentences=self.settings.rag.max_answer_sentences,
+        with self._runtime_stage("generate_answer") as span:
+            prompt = self.prompt_loader(self.settings.prompt_path)
+            self._record_runtime_prompt(prompt)
+            state.generation_result = provider.generate(
+                GenerationRequest(
+                    question=state.original_question,
+                    prompt=prompt,
+                    context=state.assembled_context,
+                    context_items=state.context_items,
+                    max_answer_sentences=self.settings.rag.max_answer_sentences,
+                )
             )
-        )
+            span.set_details(
+                {
+                    "generation_backend": self.settings.generation.backend,
+                    "generation_model_id": state.generation_result.model_id,
+                }
+            )
         state.record_event(
             node=_GENERATE_ANSWER,
             status="completed",
@@ -250,11 +285,13 @@ class RagWorkflowRunner:
             raise CitationValidationError("Generation result is missing.")
 
         try:
-            cited_ids = _validate_citations(
-                answer=state.generation_result.answer,
-                cited_context_ids=state.generation_result.cited_context_ids,
-                context_items=state.context_items,
-            )
+            with self._runtime_stage("validate_citations", error_code="invalid_citations") as span:
+                cited_ids = _validate_citations(
+                    answer=state.generation_result.answer,
+                    cited_context_ids=state.generation_result.cited_context_ids,
+                    context_items=state.context_items,
+                )
+                span.set_detail("citation_count", len(cited_ids))
         except CitationValidationError as exc:
             state.final_status = "citation_failed"
             state.record_event(
@@ -285,18 +322,20 @@ class RagWorkflowRunner:
             status="completed",
             message="Response finalized.",
         )
-        return QueryResponse(
-            answer=state.generation_result.answer,
-            citations=_citations_for(state.context_items, cited_ids),
-            retrieved_context=_retrieved_context_items(state.context_items),
-            metadata=ResponseMetadata(
-                retrieval_top_k=state.top_k,
-                context_item_count=len(state.context_items),
-                generation_backend=self.settings.generation.backend,
-                generation_model_id=state.generation_result.model_id,
-            ),
-            workflow=state.metadata(),
-        )
+        self._record_runtime_workflow_state(state)
+        with self._runtime_stage("finalize_response"):
+            return QueryResponse(
+                answer=state.generation_result.answer,
+                citations=_citations_for(state.context_items, cited_ids),
+                retrieved_context=_retrieved_context_items(state.context_items),
+                metadata=ResponseMetadata(
+                    retrieval_top_k=state.top_k,
+                    context_item_count=len(state.context_items),
+                    generation_backend=self.settings.generation.backend,
+                    generation_model_id=state.generation_result.model_id,
+                ),
+                workflow=state.metadata(),
+            )
 
     def _generation_provider(self) -> GenerationProvider:
         if self.generation_provider is not None:
@@ -305,6 +344,34 @@ class RagWorkflowRunner:
             backend=self.settings.generation.backend,
             model_id=self.settings.generation.model_id,
         )
+
+    def _runtime_stage(
+        self,
+        stage: RuntimeStage,
+        *,
+        error_code: str | None = None,
+    ) -> AbstractContextManager[StageSpan]:
+        if self.runtime_recorder is None:
+            return nullcontext(StageSpan())
+        return self.runtime_recorder.stage(stage, error_code=error_code)
+
+    def _record_runtime_context(self, context: str) -> None:
+        if self.runtime_recorder is not None:
+            self.runtime_recorder.record_context(context=context)
+
+    def _record_runtime_prompt(self, prompt: str) -> None:
+        if self.runtime_recorder is not None:
+            self.runtime_recorder.record_prompt(prompt=prompt)
+
+    def _record_runtime_retrieval_attempts(self, state: WorkflowState) -> None:
+        if self.runtime_recorder is not None:
+            self.runtime_recorder.record_retrieval_attempts(state.retrieval_attempts)
+
+    def _record_runtime_workflow_state(self, state: WorkflowState) -> None:
+        if self.runtime_recorder is None:
+            return
+        self.runtime_recorder.record_retrieval_attempts(state.retrieval_attempts)
+        self.runtime_recorder.record_workflow_route(state.route())
 
 
 def _retrieve_chunks(

@@ -6,6 +6,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.observability.models import RuntimeSummary
+
 
 class QueryRequest(BaseModel):
     """Request body for POST /query."""
@@ -76,6 +78,7 @@ class QueryResponse(BaseModel):
     retrieved_context: list[RetrievedContextItem]
     metadata: ResponseMetadata
     workflow: WorkflowMetadata
+    runtime: RuntimeSummary | None = None
 
 
 class ErrorBody(BaseModel):
