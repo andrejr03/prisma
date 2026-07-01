@@ -82,6 +82,13 @@ class EvalSettings:
 
 
 @dataclass(frozen=True)
+class PromptRegressionSettings:
+    baseline_path: str
+    baseline_prompt_snapshot_path: str
+    report_path: str
+
+
+@dataclass(frozen=True)
 class PrismaSettings:
     repo_root: Path
     paths: PathSettings
@@ -93,6 +100,7 @@ class PrismaSettings:
     generation: GenerationSettings
     workflow: WorkflowSettings
     evals: EvalSettings
+    prompt_regression: PromptRegressionSettings
 
     def resolve_path(self, value: str) -> Path:
         path = Path(value)
@@ -128,6 +136,18 @@ class PrismaSettings:
     def eval_baseline_path(self) -> Path:
         return self.resolve_path(self.evals.baseline_path)
 
+    @property
+    def prompt_regression_baseline_path(self) -> Path:
+        return self.resolve_path(self.prompt_regression.baseline_path)
+
+    @property
+    def prompt_regression_snapshot_path(self) -> Path:
+        return self.resolve_path(self.prompt_regression.baseline_prompt_snapshot_path)
+
+    @property
+    def prompt_regression_report_path(self) -> Path:
+        return self.resolve_path(self.prompt_regression.report_path)
+
     def with_overrides(
         self,
         *,
@@ -162,6 +182,7 @@ def load_settings(config_path: Path | str = DEFAULT_CONFIG_PATH) -> PrismaSettin
     generation = _section(data, "generation")
     workflow = _section(data, "workflow")
     evals = _section(data, "evals")
+    prompt_regression = _section(data, "prompt_regression")
 
     workflow_settings = WorkflowSettings(
         enabled=_get_bool(workflow, "enabled"),
@@ -181,6 +202,15 @@ def load_settings(config_path: Path | str = DEFAULT_CONFIG_PATH) -> PrismaSettin
     )
     if not 0.0 <= eval_settings.minimum_pass_rate <= 1.0:
         raise ValueError("Evaluation minimum_pass_rate must be between 0.0 and 1.0")
+
+    prompt_regression_settings = PromptRegressionSettings(
+        baseline_path=_get_str(prompt_regression, "baseline_path"),
+        baseline_prompt_snapshot_path=_get_str(
+            prompt_regression,
+            "baseline_prompt_snapshot_path",
+        ),
+        report_path=_get_str(prompt_regression, "report_path"),
+    )
 
     return PrismaSettings(
         repo_root=PROJECT_ROOT,
@@ -225,6 +255,7 @@ def load_settings(config_path: Path | str = DEFAULT_CONFIG_PATH) -> PrismaSettin
         ),
         workflow=workflow_settings,
         evals=eval_settings,
+        prompt_regression=prompt_regression_settings,
     )
 
 

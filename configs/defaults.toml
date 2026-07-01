@@ -56,3 +56,8 @@ golden_path = "evals/golden/cases.jsonl"
 scorecard_path = ".local/prisma/evals/scorecard.json"
 baseline_path = "evals/baselines/phase4-baseline.json"
 minimum_pass_rate = 0.8
+
+[prompt_regression]
+baseline_path = "evals/baselines/phase4-baseline.json"
+baseline_prompt_snapshot_path = "evals/baselines/phase4-prompt-snapshot.json"
+report_path = ".local/prisma/evals/regression.json"

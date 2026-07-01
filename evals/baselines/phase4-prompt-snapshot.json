@@ -1,0 +1,13 @@
+{
+  "snapshot_id": "phase4-prompt-snapshot",
+  "baseline_id": "phase4-baseline",
+  "prompt_fingerprint": {
+    "algorithm": "sha256",
+    "digest": "sha256:e4707b194d5c9c2cca3ceaf5dacf19722998bbc779bc625df6c3c35a5f15604c",
+    "prompt_path": "prompts/baseline_rag.txt",
+    "byte_count": 230,
+    "line_count": 5,
+    "captured_at": "2026-06-30T00:00:00Z",
+    "semantic_version": null
+  }
+}
