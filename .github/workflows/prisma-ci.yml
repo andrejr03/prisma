@@ -1,0 +1,102 @@
+name: Prisma CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validation:
+    name: Validation and Evaluation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Upgrade pip
+        run: python -m pip install -U pip
+
+      - name: Install Prisma with dev dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Ruff lint
+        run: python -m ruff check .
+
+      - name: Ruff format check
+        run: python -m ruff format --check .
+
+      - name: Mypy type check
+        run: python -m mypy app evals
+
+      - name: Pytest
+        run: python -m pytest
+
+      - name: Build local retrieval index
+        run: python -m app.retrieval.index
+
+      - name: Run evaluation harness
+        run: python -m evals.runner
+
+      - name: Assert evaluation pass rate
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          scorecard_path = Path(".local/prisma/evals/scorecard.json")
+          if not scorecard_path.is_file():
+              raise SystemExit(f"Missing scorecard: {scorecard_path}")
+
+          scorecard = json.loads(scorecard_path.read_text(encoding="utf-8"))
+          aggregate = scorecard.get("aggregate")
+          if not isinstance(aggregate, dict):
+              raise SystemExit("Scorecard is missing aggregate object")
+
+          pass_rate = aggregate.get("pass_rate")
+          minimum_pass_rate = aggregate.get("minimum_pass_rate")
+          if not isinstance(pass_rate, (int, float)) or isinstance(pass_rate, bool):
+              raise SystemExit("Scorecard is missing numeric aggregate.pass_rate")
+          if not isinstance(minimum_pass_rate, (int, float)) or isinstance(
+              minimum_pass_rate, bool
+          ):
+              raise SystemExit("Scorecard is missing numeric aggregate.minimum_pass_rate")
+
+          if pass_rate < minimum_pass_rate:
+              raise SystemExit(
+                  "Evaluation pass rate below minimum: "
+                  f"{pass_rate:.3f} < {minimum_pass_rate:.3f}"
+              )
+
+          print(
+              "Evaluation pass-rate gate passed: "
+              f"{pass_rate:.3f} >= {minimum_pass_rate:.3f}"
+          )
+          PY
+
+      - name: Run prompt regression
+        run: python -m evals.regression
+
+      - name: Inspect runtime artifact
+        run: python -m app.observability.inspect
+
+      - name: Upload generated reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prisma-generated-reports
+          if-no-files-found: warn
+          path: |
+            .local/prisma/evals/scorecard.json
+            .local/prisma/evals/regression.json
+            .local/prisma/runtime/latest-request.json
