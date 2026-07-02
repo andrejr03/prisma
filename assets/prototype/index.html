@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prisma — Evaluation Command Center · Prototype</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============ TOP BAR ============ -->
+<div class="app-top">
+  <button class="hamburger" id="hamburger" aria-label="Toggle navigation">☰</button>
+  <div class="brand"><span class="mark"></span>Prisma <small>v0.6 · design prototype</small></div>
+  <div class="top-meta">
+    <div class="pill"><span class="dot local"></span>local-first · 127.0.0.1:7420</div>
+    <div class="pill">suite: <b>eval-suite/full</b></div>
+    <div class="pill">baseline: <b>main@a91f</b></div>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- ============ SIDEBAR ============ -->
+  <nav class="side" id="side">
+    <div class="grp">Platform</div>
+    <a class="nav-item" data-view="overview">
+      <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+      Engineering Overview</a>
+
+    <div class="grp">Evaluation</div>
+    <a class="nav-item on" data-view="evaluation">
+      <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8l2 2 4-4"/></svg>
+      Evaluation Command Center</a>
+    <a class="nav-item" data-view="golden">
+      <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2l1.8 3.7 4 .6-2.9 2.8.7 4L8 11.8 4.4 13.1l.7-4L2.2 6.3l4-.6z"/></svg>
+      Golden Cases<span class="ct">240</span></a>
+    <a class="nav-item" data-view="regression">
+      <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8h4l2-4 2 8 1-4h1"/></svg>
+      Prompt Regression</a>
+
+    <div class="grp">Observability</div>
+    <a class="nav-item" data-view="runtime">
+      <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 12l3-5 3 3 3-6 3 4"/></svg>
+      Runtime Metrics</a>
+    <a class="nav-item" data-view="workflow">
+      <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
+      Workflow Timeline</a>
+    <a class="nav-item" data-view="requests">
+      <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12M6 6v8"/></svg>
+      Request Inspector<span class="ct">1.2k</span></a>
+
+    <div class="grp">Retrieval</div>
+    <a class="nav-item" data-view="context">
+      <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 2h8l2 2v10H3z"/><path d="M5 6h6M5 9h6M5 12h4"/></svg>
+      Retrieved Context</a>
+    <a class="nav-item" data-view="citations">
+      <svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 10l4-4M5 5a2 2 0 013 0l1 1M7 11a2 2 0 01-3 0"/></svg>
+      Citation Inspector<span class="ct">312</span></a>
+  </nav>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+
+    <!-- ==================== 1. ENGINEERING OVERVIEW ==================== -->
+    <section class="view" id="view-overview">
+      <div class="page-h"><h1>Engineering Overview</h1><span class="badge blue">PLATFORM</span></div>
+      <p class="page-sub">Single-pane status for the local-first LLM engineering platform — retrieval, baseline RAG API, bounded agent workflow, evaluation harness, prompt regression and runtime observability.</p>
+
+      <div class="grid cols-6" style="grid-template-columns:repeat(6,1fr)">
+        <div class="stat"><div class="lbl">quality gate</div><div class="val" style="color:var(--green);font-size:20px;margin-top:10px">PASS</div><div class="delta flat">run #88</div></div>
+        <div class="stat"><div class="lbl">golden cases</div><div class="val">238<small>/240</small></div><div class="delta warn">2 regressed</div></div>
+        <div class="stat"><div class="lbl">faithfulness</div><div class="val">0.94</div><div class="delta down">▼ 0.04</div></div>
+        <div class="stat"><div class="lbl">p95 latency</div><div class="val">1.31<small>s</small></div><div class="delta down">▲ 190ms</div></div>
+        <div class="stat"><div class="lbl">req / min</div><div class="val">184</div><div class="delta up">▲ 12%</div></div>
+        <div class="stat"><div class="lbl">error rate</div><div class="val warn">0.9<small>%</small></div><div class="delta warn">3 / 331</div></div>
+      </div>
+
+      <div class="grid split mt26" style="grid-template-columns:1fr 1fr">
+        <div class="panel">
+          <div class="ph"><h3>Subsystem health</h3><span class="sub">6 modules</span></div>
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead><tr><th>module</th><th>version</th><th>status</th><th class="num">p95</th></tr></thead>
+              <tbody>
+                <tr data-goto="context"><td>retrieval.hybrid</td><td>0.6.2</td><td><span class="chip ok">healthy</span></td><td class="num">84ms</td></tr>
+                <tr data-goto="requests"><td>rag.api</td><td>0.6.2</td><td><span class="chip ok">healthy</span></td><td class="num">438ms</td></tr>
+                <tr data-goto="workflow"><td>agent.workflow</td><td>0.6.0</td><td><span class="chip warnc">degraded</span></td><td class="num">1.9s</td></tr>
+                <tr data-goto="evaluation"><td>eval.harness</td><td>0.6.1</td><td><span class="chip ok">healthy</span></td><td class="num">—</td></tr>
+                <tr data-goto="regression"><td>prompt.regression</td><td>0.6.1</td><td><span class="chip fail">blocking</span></td><td class="num">—</td></tr>
+                <tr data-goto="runtime"><td>runtime.observ</td><td>0.6.2</td><td><span class="chip ok">healthy</span></td><td class="num">6ms</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph"><h3>Recent activity</h3><span class="sub">local trace store</span></div>
+          <div class="pb" style="padding-top:8px">
+            <div class="tbl-wrap"><table class="tbl">
+              <tbody>
+                <tr data-goto="regression"><td style="color:var(--red)">✗</td><td>regression gate blocked feat/rerank-v2</td><td class="num">2m</td></tr>
+                <tr data-goto="evaluation"><td style="color:var(--green)">✓</td><td>eval run #88 completed — 238/240</td><td class="num">3m</td></tr>
+                <tr data-goto="golden"><td style="color:var(--amber)">!</td><td>gc_multi_hop_014 regressed −0.08</td><td class="num">3m</td></tr>
+                <tr data-goto="requests"><td style="color:var(--blue)">→</td><td>req_9f3a1c · rag.answer · 438ms</td><td class="num">6m</td></tr>
+                <tr data-goto="context"><td style="color:var(--teal)">◆</td><td>index rebuilt · corpus@a91f · 48,210 chunks</td><td class="num">21m</td></tr>
+              </tbody>
+            </table></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel mt">
+        <div class="ph"><h3>Deterministic runtime posture</h3><span class="sub">provider-neutral · reproducible</span></div>
+        <div class="pb">
+          <dl class="kv" style="grid-template-columns:auto 1fr auto 1fr;gap:12px 24px">
+            <dt>provider</dt><dd><b>local:vllm/qwen2.5</b></dd>
+            <dt>temperature</dt><dd><b>0.0</b></dd>
+            <dt>seed</dt><dd><b>42</b></dd>
+            <dt>determinism</dt><dd><b style="color:var(--green)">enforced</b></dd>
+            <dt>index</dt><dd><b>corpus@a91f</b></dd>
+            <dt>cache</dt><dd><b>61% hit</b></dd>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 2. EVALUATION COMMAND CENTER ==================== -->
+    <section class="view active" id="view-evaluation">
+      <div class="page-h"><h1>Evaluation Command Center</h1><span class="badge">CONCEPT B</span></div>
+      <p class="page-sub">Evaluation-first control room. Every change is measured against a baseline before it ships — quality gates block regressions, golden cases hold behavior steady, and prompt diffs are scored, not guessed.</p>
+
+      <div class="grid split" style="grid-template-columns:1fr 1fr">
+        <div class="gate passg">
+          <div class="gicon">✓</div>
+          <div><div class="gt">Quality gate — PASS</div><div class="gs">240 cases · 6 metrics · 238 pass</div></div>
+          <div class="gmeta">run <b>#88</b><br>2m 41s ago<br>ci · <span class="g-green">green</span></div>
+        </div>
+        <div class="gate failg">
+          <div class="gicon">!</div>
+          <div><div class="gt">Regression check — 2 FAIL</div><div class="gs">faithfulness −0.04 below gate</div></div>
+          <div class="gmeta">feat/rerank-v2<br>blocks merge<br>ci · <span class="g-red">red</span></div>
+        </div>
+      </div>
+
+      <div class="sec-t">Scorecards · Δ vs baseline main@a91f</div>
+      <div class="grid cols-4" style="grid-template-columns:repeat(4,1fr)">
+        <div class="scorecard"><div class="sc-name">Faithfulness</div><div class="sc-val" style="color:var(--green)">0.94</div><div class="sc-sub"><span class="down">▼ 0.04</span><span class="flat">vs base</span></div><div class="track"><i style="width:94%;background:var(--green)"></i></div></div>
+        <div class="scorecard"><div class="sc-name">Answer relevance</div><div class="sc-val" style="color:var(--green)">0.91</div><div class="sc-sub"><span class="up">▲ 0.02</span><span class="flat">vs base</span></div><div class="track"><i style="width:91%;background:var(--green)"></i></div></div>
+        <div class="scorecard"><div class="sc-name">Context precision</div><div class="sc-val" style="color:var(--amber)">0.78</div><div class="sc-sub"><span class="up">▲ 0.06</span><span class="flat">vs base</span></div><div class="track"><i style="width:78%;background:var(--amber)"></i></div></div>
+        <div class="scorecard"><div class="sc-name">Exact-match</div><div class="sc-val" style="color:var(--green)">0.86</div><div class="sc-sub"><span class="flat">— 0.00</span><span class="flat">vs base</span></div><div class="track"><i style="width:86%;background:var(--green)"></i></div></div>
+      </div>
+
+      <div class="grid split mt26" style="grid-template-columns:1.3fr 1fr">
+        <div class="panel">
+          <div class="ph"><h3>Golden cases</h3><span class="sub">238 / 240 · <a data-view="golden" style="color:var(--blue);cursor:pointer;text-decoration:none">view all →</a></span></div>
+          <div class="tbl-wrap"><table class="tbl">
+            <thead><tr><th>case</th><th>metric</th><th class="num">base</th><th class="num">now</th><th class="num">Δ</th><th>result</th></tr></thead>
+            <tbody>
+              <tr data-goto="golden"><td class="idc">gc_multi_hop_014</td><td>faithfulness</td><td class="num">0.98</td><td class="num" style="color:var(--red)">0.90</td><td class="num down">−0.08</td><td><span class="chip fail">fail</span></td></tr>
+              <tr data-goto="golden"><td class="idc">gc_citation_071</td><td>context-prec</td><td class="num">0.81</td><td class="num" style="color:var(--red)">0.72</td><td class="num down">−0.09</td><td><span class="chip fail">fail</span></td></tr>
+              <tr data-goto="golden"><td class="idc">gc_agent_route_9</td><td>exact-match</td><td class="num">1.00</td><td class="num">1.00</td><td class="num flat">0.00</td><td><span class="chip ok">pass</span></td></tr>
+              <tr data-goto="golden"><td class="idc">gc_rag_short_112</td><td>relevance</td><td class="num">0.88</td><td class="num" style="color:var(--green)">0.93</td><td class="num up">+0.05</td><td><span class="chip ok">pass</span></td></tr>
+              <tr data-goto="golden"><td class="idc">gc_grounded_033</td><td>faithfulness</td><td class="num">0.95</td><td class="num">0.96</td><td class="num up">+0.01</td><td><span class="chip ok">pass</span></td></tr>
+              <tr data-goto="golden"><td class="idc">gc_longctx_155</td><td>context-prec</td><td class="num">0.70</td><td class="num" style="color:var(--green)">0.79</td><td class="num up">+0.09</td><td><span class="chip ok">pass</span></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <div class="panel">
+          <div class="ph"><h3>Prompt regression</h3><span class="sub">answer.v6 → v7</span></div>
+          <div class="diff">
+            <div class="row"><span class="mk">@@</span><span class="val hdr">system.grounding</span><span></span></div>
+            <div class="row del"><span class="mk">−</span><span class="val">Answer using retrieved context.</span><span class="chip fail">0.98</span></div>
+            <div class="row add"><span class="mk">+</span><span class="val">Answer only from cited spans; refuse if unsupported.</span><span class="chip warnc">0.90</span></div>
+            <div class="row"><span class="mk">@@</span><span class="val hdr">rerank.threshold</span><span></span></div>
+            <div class="row del"><span class="mk">−</span><span class="val">0.35</span><span class="chip neu">base</span></div>
+            <div class="row add"><span class="mk">+</span><span class="val">0.50</span><span class="chip warnc">−ctx</span></div>
+          </div>
+          <div class="pb" style="padding-top:0">
+            <div class="rec"><span style="color:var(--red)">▲</span> Stricter grounding raised refusals and lowered faithfulness on multi-hop.<br><span style="color:var(--amber)">recommend</span> · hold merge, re-run <b style="color:var(--txt)">gc_multi_hop_*</b>.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel mt">
+        <div class="ph"><h3>Baseline comparison</h3><span class="sub">last 12 eval runs · faithfulness</span></div>
+        <div class="pb">
+          <div class="spark thr-line" id="eval-spark"></div>
+          <div class="legend">
+            <span class="swatch"><i style="background:var(--green)"></i> pass</span>
+            <span class="swatch"><i style="background:var(--red)"></i> below gate</span>
+            <span style="margin-left:auto">baseline <b>0.98</b></span>
+            <span>current <b style="color:var(--amber)">0.94</b></span>
+            <span>threshold <b style="color:var(--red)">≥0.96</b></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. GOLDEN CASES ==================== -->
+    <section class="view" id="view-golden">
+      <div class="crumb"><b>Evaluation</b> / Golden Cases</div>
+      <div class="page-h"><h1>Golden Cases</h1><span class="badge">240 CASES</span></div>
+      <p class="page-sub">The behavioral contract for the platform. Curated input/expectation pairs run every eval; any case that drops below its baseline blocks the merge.</p>
+
+      <div class="grid cols-4" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat"><div class="lbl">total cases</div><div class="val">240</div><div class="delta flat">6 metrics</div></div>
+        <div class="stat"><div class="lbl">passing</div><div class="val up">238</div><div class="delta up">99.2%</div></div>
+        <div class="stat"><div class="lbl">regressed</div><div class="val down">2</div><div class="delta down">blocks merge</div></div>
+        <div class="stat"><div class="lbl">avg score</div><div class="val">0.91</div><div class="delta down">▼ 0.01</div></div>
+      </div>
+
+      <div class="panel mt26">
+        <div class="ph"><h3>All golden cases</h3><span class="sub">sorted · Δ ascending</span></div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>case</th><th>suite</th><th>metric</th><th class="num">base</th><th class="num">now</th><th class="num">Δ</th><th>result</th></tr></thead>
+          <tbody id="golden-body"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ==================== 4. PROMPT REGRESSION ==================== -->
+    <section class="view" id="view-regression">
+      <div class="crumb"><b>Evaluation</b> / Prompt Regression</div>
+      <div class="page-h"><h1>Prompt Regression</h1><span class="badge amber">2 BLOCKING</span></div>
+      <p class="page-sub">Prompt changes are diffed and re-scored against the baseline. A prompt is a versioned artifact — regressions are caught before they reach production.</p>
+
+      <div class="grid split" style="grid-template-columns:1fr 1fr">
+        <div class="gate failg">
+          <div class="gicon">!</div>
+          <div><div class="gt">answer.v6 → answer.v7</div><div class="gs">faithfulness −0.04 · context-prec −0.09</div></div>
+          <div class="gmeta">feat/rerank-v2<br>blocks merge</div>
+        </div>
+        <div class="gate passg">
+          <div class="gicon">✓</div>
+          <div><div class="gt">route.v3 → route.v4</div><div class="gs">exact-match +0.00 · relevance +0.03</div></div>
+          <div class="gmeta">main@a91f<br>merged</div>
+        </div>
+      </div>
+
+      <div class="panel mt26">
+        <div class="ph"><h3>Diff · answer.v6 → answer.v7</h3><span class="sub">system + params</span></div>
+        <div class="diff">
+          <div class="row"><span class="mk">@@</span><span class="val hdr">system.grounding — line 4</span><span></span></div>
+          <div class="row del"><span class="mk">−</span><span class="val">Answer the question using the retrieved context.</span><span class="chip neu">v6</span></div>
+          <div class="row add"><span class="mk">+</span><span class="val">Answer only from cited spans. If unsupported, refuse and say so explicitly.</span><span class="chip neu">v7</span></div>
+          <div class="row"><span class="mk">@@</span><span class="val hdr">rerank.threshold</span><span></span></div>
+          <div class="row del"><span class="mk">−</span><span class="val">rerank_threshold = 0.35</span><span class="chip neu">v6</span></div>
+          <div class="row add"><span class="mk">+</span><span class="val">rerank_threshold = 0.50</span><span class="chip neu">v7</span></div>
+          <div class="row"><span class="mk">@@</span><span class="val hdr">max_context_chunks</span><span></span></div>
+          <div class="row del"><span class="mk">−</span><span class="val">max_context_chunks = 10</span><span class="chip neu">v6</span></div>
+          <div class="row add"><span class="mk">+</span><span class="val">max_context_chunks = 8</span><span class="chip neu">v7</span></div>
+        </div>
+      </div>
+
+      <div class="grid split mt" style="grid-template-columns:1fr 1fr">
+        <div class="panel">
+          <div class="ph"><h3>Score impact</h3><span class="sub">v7 vs v6</span></div>
+          <div class="tbl-wrap"><table class="tbl">
+            <thead><tr><th>metric</th><th class="num">v6</th><th class="num">v7</th><th class="num">Δ</th><th>gate</th></tr></thead>
+            <tbody>
+              <tr><td>faithfulness</td><td class="num">0.98</td><td class="num" style="color:var(--red)">0.94</td><td class="num down">−0.04</td><td><span class="chip fail">fail</span></td></tr>
+              <tr><td>context-precision</td><td class="num">0.87</td><td class="num" style="color:var(--red)">0.78</td><td class="num down">−0.09</td><td><span class="chip fail">fail</span></td></tr>
+              <tr><td>answer-relevance</td><td class="num">0.89</td><td class="num" style="color:var(--green)">0.91</td><td class="num up">+0.02</td><td><span class="chip ok">pass</span></td></tr>
+              <tr><td>refusal-correctness</td><td class="num">0.82</td><td class="num" style="color:var(--green)">0.95</td><td class="num up">+0.13</td><td><span class="chip ok">pass</span></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+        <div class="panel">
+          <div class="ph"><h3>Reviewer notes</h3><span class="sub">auto-generated</span></div>
+          <div class="pb">
+            <div class="rec" style="margin-top:0"><span style="color:var(--red)">▲</span> Stricter grounding + higher rerank threshold cut recall on multi-hop cases; faithfulness fell where answers now refuse partially-supported claims.</div>
+            <div class="rec"><span style="color:var(--green)">▲</span> Refusal correctness improved sharply (+0.13) — the model now abstains cleanly on unsupported prompts.</div>
+            <div class="rec"><span style="color:var(--amber)">recommend</span> · keep grounding change, revert rerank_threshold to 0.40, re-run <b style="color:var(--txt)">gc_multi_hop_*</b> and <b style="color:var(--txt)">gc_citation_*</b>.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 5. RUNTIME METRICS ==================== -->
+    <section class="view" id="view-runtime">
+      <div class="crumb"><b>Observability</b> / Runtime Metrics</div>
+      <div class="page-h"><h1>Runtime Metrics</h1><span class="badge violet">60m WINDOW</span></div>
+      <p class="page-sub">Live runtime telemetry from the local trace store — latency, throughput, cache and error behavior across the RAG API and agent workflow.</p>
+
+      <div class="grid cols-6" style="grid-template-columns:repeat(6,1fr)">
+        <div class="stat"><div class="lbl">req / min</div><div class="val">184</div><div class="delta up">▲ 12%</div></div>
+        <div class="stat"><div class="lbl">p50 latency</div><div class="val">412<small>ms</small></div><div class="delta up">▼ 38ms</div></div>
+        <div class="stat"><div class="lbl">p95 latency</div><div class="val">1.31<small>s</small></div><div class="delta down">▲ 190ms</div></div>
+        <div class="stat"><div class="lbl">tokens / s</div><div class="val">78.4</div><div class="delta flat">— steady</div></div>
+        <div class="stat"><div class="lbl">cache hit</div><div class="val">61<small>%</small></div><div class="delta up">▲ 4pt</div></div>
+        <div class="stat"><div class="lbl">error rate</div><div class="val warn">0.9<small>%</small></div><div class="delta warn">3 / 331</div></div>
+      </div>
+
+      <div class="grid split mt26" style="grid-template-columns:1fr 1fr">
+        <div class="panel">
+          <div class="ph"><h3>Latency p95</h3><span class="sub">ms · 60m</span></div>
+          <div class="pb"><div class="spark" id="rt-lat"></div>
+            <div class="legend"><span>min <b>0.9s</b></span><span>max <b>1.6s</b></span><span style="margin-left:auto">now <b style="color:var(--amber)">1.31s</b></span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph"><h3>Throughput</h3><span class="sub">tok/s · 60m</span></div>
+          <div class="pb"><div class="spark" id="rt-tok"></div>
+            <div class="legend"><span>min <b>52</b></span><span>max <b>96</b></span><span style="margin-left:auto">now <b style="color:var(--teal)">78.4</b></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel mt">
+        <div class="ph"><h3>Route latency breakdown</h3><span class="sub">by workflow stage · p95</span></div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>stage</th><th>calls</th><th class="num">p50</th><th class="num">p95</th><th class="num">share</th><th>trend</th></tr></thead>
+          <tbody>
+            <tr><td>ingest.normalize</td><td>331</td><td class="num">4ms</td><td class="num">8ms</td><td class="num">1%</td><td><span class="chip ok">stable</span></td></tr>
+            <tr><td>retrieve.hybrid</td><td>331</td><td class="num">61ms</td><td class="num">120ms</td><td class="num">9%</td><td><span class="chip ok">stable</span></td></tr>
+            <tr><td>rerank.cross-enc</td><td>228</td><td class="num">98ms</td><td class="num">180ms</td><td class="num">13%</td><td><span class="chip warnc">rising</span></td></tr>
+            <tr><td>generate.stream</td><td>331</td><td class="num">210ms</td><td class="num">980ms</td><td class="num">74%</td><td><span class="chip ok">stable</span></td></tr>
+            <tr><td>cite.span-map</td><td>331</td><td class="num">22ms</td><td class="num">41ms</td><td class="num">3%</td><td><span class="chip ok">stable</span></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ==================== 6. WORKFLOW TIMELINE ==================== -->
+    <section class="view" id="view-workflow">
+      <div class="crumb"><b>Observability</b> / Workflow Timeline · <b>trace_7c22e1</b></div>
+      <div class="page-h"><h1>Workflow Timeline</h1><span class="badge violet">TRACE 7c22e1</span></div>
+      <p class="page-sub">A single request expanded into a deterministic stage waterfall. Retrieval attempts, rerank, context assembly, generation and citation mapping — reproducible from seed.</p>
+
+      <div class="grid cols-4" style="grid-template-columns:repeat(5,1fr)">
+        <div class="stat"><div class="lbl">route</div><div class="val" style="font-size:16px;color:var(--violet);margin-top:9px">rag.answer</div><div class="delta flat">6 stages</div></div>
+        <div class="stat"><div class="lbl">total</div><div class="val">2.11<small>s</small></div><div class="delta flat">wall clock</div></div>
+        <div class="stat"><div class="lbl">retrieval</div><div class="val">3<small>att</small></div><div class="delta warn">1 empty</div></div>
+        <div class="stat"><div class="lbl">tokens</div><div class="val">1,204</div><div class="delta flat">812 in · 392 out</div></div>
+        <div class="stat"><div class="lbl">status</div><div class="val up" style="font-size:18px;margin-top:10px">✓ grounded</div><div class="delta flat">0 unsupported</div></div>
+      </div>
+
+      <div class="panel mt26">
+        <div class="ph"><h3>Deterministic route</h3><span class="sub">planned · no branch taken</span></div>
+        <div class="pb">
+          <div class="route">
+            <div class="node"><div class="nn">ingest</div><div class="nt">normalize</div><div class="nl">6ms</div></div>
+            <div class="node"><div class="nn">retrieve</div><div class="nt">hybrid bm25+vec</div><div class="nl">84ms</div></div>
+            <div class="node hot"><div class="nn">rerank</div><div class="nt">cross-encoder</div><div class="nl">121ms</div></div>
+            <div class="node skip"><div class="nn">tool.call</div><div class="nt">skipped</div><div class="nl">—</div></div>
+            <div class="node hot"><div class="nn">generate</div><div class="nt">vllm/qwen2.5</div><div class="nl">1.49s</div></div>
+            <div class="node"><div class="nn">cite</div><div class="nt">span-map</div><div class="nl">29ms</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel mt">
+        <div class="ph"><h3>Stage latency waterfall</h3><span class="sub">0 → 2,110ms</span></div>
+        <div class="pb">
+          <div class="wf">
+            <div class="lane"><span class="ln">ingest.normalize</span><div class="track2"><div class="bar b-teal" style="left:0%;width:3%">6</div></div><span class="ms">6ms</span></div>
+            <div class="lane"><span class="ln"><span class="depth">└</span> retrieve.hybrid</span><div class="track2"><div class="bar b-blue" style="left:3%;width:9%">84</div></div><span class="ms">84ms</span></div>
+            <div class="lane"><span class="ln"><span class="depth">&nbsp;&nbsp;└</span> retrieve.attempt·2</span><div class="track2"><div class="bar b-blue" style="left:12%;width:6%">52</div></div><span class="ms">52ms</span></div>
+            <div class="lane"><span class="ln"><span class="depth">&nbsp;&nbsp;└</span> retrieve.attempt·3</span><div class="track2"><div class="bar b-amber" style="left:18%;width:4%">31</div></div><span class="ms">31ms</span></div>
+            <div class="lane"><span class="ln"><span class="depth">└</span> rerank.cross-enc</span><div class="track2"><div class="bar b-violet" style="left:22%;width:14%">121</div></div><span class="ms">121ms</span></div>
+            <div class="lane"><span class="ln"><span class="depth">└</span> context.assemble</span><div class="track2"><div class="bar b-pink" style="left:36%;width:5%">41</div></div><span class="ms">41ms</span></div>
+            <div class="lane"><span class="ln"><span class="depth">└</span> generate.stream</span><div class="track2"><div class="bar b-green" style="left:41%;width:52%">1,489</div></div><span class="ms">1.49s</span></div>
+            <div class="lane"><span class="ln"><span class="depth">└</span> cite.span-map</span><div class="track2"><div class="bar b-teal" style="left:93%;width:4%">29</div></div><span class="ms">29ms</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel mt collapsible">
+        <div class="ph" data-collapse><h3>Runtime artifact <span class="caret">▾</span></h3><span class="sub">span:generate.stream</span></div>
+        <div class="pb">
+<pre class="json"><span class="c">// emitted span — phase-6 trace store</span>
+{
+  <span class="k">"span"</span>: <span class="s">"generate.stream"</span>,
+  <span class="k">"provider"</span>: <span class="s">"local:vllm/qwen2.5"</span>,
+  <span class="k">"deterministic"</span>: <span class="b">true</span>,
+  <span class="k">"seed"</span>: <span class="n">42</span>,
+  <span class="k">"temperature"</span>: <span class="n">0.0</span>,
+  <span class="k">"latency_ms"</span>: <span class="n">1489</span>,
+  <span class="k">"tokens"</span>: { <span class="k">"in"</span>: <span class="n">812</span>, <span class="k">"out"</span>: <span class="n">392</span> },
+  <span class="k">"tok_per_s"</span>: <span class="n">78.4</span>,
+  <span class="k">"context_chunks"</span>: <span class="n">8</span>,
+  <span class="k">"grounded"</span>: <span class="b">true</span>,
+  <span class="k">"unsupported_spans"</span>: <span class="n">0</span>,
+  <span class="k">"cache"</span>: <span class="s">"miss"</span>
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 7. REQUEST INSPECTOR ==================== -->
+    <section class="view" id="view-requests">
+      <div class="crumb"><b>Observability</b> / Request Inspector</div>
+      <div class="page-h"><h1>Request Inspector</h1><span class="badge blue">LIVE</span></div>
+      <p class="page-sub">Every request against the RAG API and agent workflow, with route, retrieval count, tokens, latency and status. Select a row to inspect its trace.</p>
+
+      <div class="grid split" style="grid-template-columns:1.5fr 1fr">
+        <div class="panel">
+          <div class="ph"><h3>Requests</h3><span class="sub">last 40 · live</span></div>
+          <div class="tbl-wrap"><table class="tbl">
+            <thead><tr><th>request</th><th>route</th><th class="num">retr</th><th class="num">tok</th><th class="num">lat</th><th>status</th></tr></thead>
+            <tbody id="req-body"></tbody>
+          </table></div>
+        </div>
+        <div class="panel" id="req-detail">
+          <div class="ph"><h3>Request detail</h3><span class="sub" id="req-detail-id">req_9f3a1c</span></div>
+          <div class="pb">
+            <dl class="kv" id="req-detail-kv">
+              <dt>route</dt><dd><b>rag.answer</b></dd>
+              <dt>status</dt><dd><b style="color:var(--green)">200 OK</b></dd>
+              <dt>latency</dt><dd><b>438ms</b></dd>
+              <dt>retrieved</dt><dd><b>8 chunks</b></dd>
+              <dt>tokens</dt><dd><b>1,204</b> (812 / 392)</dd>
+              <dt>provider</dt><dd><b>local:vllm/qwen2.5</b></dd>
+              <dt>grounded</dt><dd><b style="color:var(--green)">yes · 0 unsupported</b></dd>
+              <dt>cache</dt><dd><b>miss</b></dd>
+            </dl>
+            <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+              <span class="chip violet" data-view="workflow" style="cursor:pointer">open trace →</span>
+              <span class="chip blue" data-view="context" style="cursor:pointer">retrieved context →</span>
+              <span class="chip neu" data-view="citations" style="cursor:pointer">citations →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 8. RETRIEVED CONTEXT ==================== -->
+    <section class="view" id="view-context">
+      <div class="crumb"><b>Retrieval</b> / Retrieved Context · <b>req_9f3a1c</b></div>
+      <div class="page-h"><h1>Retrieved Context</h1><span class="badge">8 CHUNKS</span></div>
+      <p class="page-sub">Hybrid retrieval candidates after rerank, with per-chunk bm25 / vector scores and final relevance. Context assembly is bounded by the model window.</p>
+
+      <div class="grid split" style="grid-template-columns:1.5fr 1fr">
+        <div class="panel">
+          <div class="ph"><h3>Reranked chunks</h3><span class="sub">24 candidates → 8 assembled</span></div>
+          <div class="pb">
+            <div class="chunk"><div class="ch-top"><span class="src">runtime/scheduler.py:118</span><span>bm25=0.71 · vec=0.88</span><span class="score">0.92</span></div><div class="ch-body">The bounded agent scheduler caps tool depth at 4 and enforces a deterministic route unless a branch predicate is satisfied…</div><div class="scorebar"><i style="width:92%"></i></div></div>
+            <div class="chunk"><div class="ch-top"><span class="src">docs/observability.md:44</span><span>bm25=0.64 · vec=0.79</span><span class="score">0.84</span></div><div class="ch-body">Phase-6 emits per-stage spans with latency, token counts and retrieval attempts to the local trace store…</div><div class="scorebar"><i style="width:84%"></i></div></div>
+            <div class="chunk"><div class="ch-top"><span class="src">rag/rerank.py:57</span><span>bm25=0.51 · vec=0.83</span><span class="score">0.79</span></div><div class="ch-body">Cross-encoder rerank runs only when candidate spread exceeds threshold; results are cached by query hash…</div><div class="scorebar"><i style="width:79%"></i></div></div>
+            <div class="chunk"><div class="ch-top"><span class="src">rag/hybrid.py:22</span><span>bm25=0.58 · vec=0.66</span><span class="score">0.71</span></div><div class="ch-body">Hybrid retrieval fuses BM25 and dense vectors with reciprocal-rank fusion before rerank…</div><div class="scorebar"><i style="width:71%"></i></div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph"><h3>Context assembly</h3><span class="sub">3,102 / 4,096 tok</span></div>
+          <div class="pb">
+            <dl class="kv">
+              <dt>window budget</dt><dd><b>4,096 tok</b></dd>
+              <dt>assembled</dt><dd><b>3,102 tok (76%)</b></dd>
+              <dt>dropped (over-budget)</dt><dd class="warn"><b style="color:var(--amber)">2 chunks</b></dd>
+              <dt>dedup collapsed</dt><dd><b>4 chunks</b></dd>
+              <dt>order</dt><dd><b>rerank-desc</b></dd>
+              <dt>injected sources</dt><dd><b style="color:var(--blue)">6 files</b></dd>
+            </dl>
+            <div class="track" style="margin-top:16px"><i style="width:76%;background:var(--pink)"></i></div>
+            <div class="sec-t" style="margin:22px 0 12px">retrieval attempts</div>
+            <div class="attempt"><span class="chip ok">#1</span><span class="an">hybrid bm25+vec · k=20</span><span style="margin-left:auto;color:var(--teal)">18 hits</span></div>
+            <div class="attempt"><span class="chip warnc">#2</span><span class="an">vec-only widen · k=20</span><span style="margin-left:auto;color:var(--amber)">6 new</span></div>
+            <div class="attempt"><span class="chip fail">#3</span><span class="an">keyword fallback · k=10</span><span style="margin-left:auto;color:var(--red)">0 hits</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 9. CITATION INSPECTOR ==================== -->
+    <section class="view" id="view-citations">
+      <div class="crumb"><b>Retrieval</b> / Citation Inspector · <b>req_9f3a1c</b></div>
+      <div class="page-h"><h1>Citation Inspector</h1><span class="badge">3 / 3 GROUNDED</span></div>
+      <p class="page-sub">Every claim in the answer mapped back to a source span. Groundedness is scored per request; unsupported spans surface here before they ship.</p>
+
+      <div class="grid cols-4" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat"><div class="lbl">claims</div><div class="val">3</div><div class="delta flat">in answer</div></div>
+        <div class="stat"><div class="lbl">grounded</div><div class="val up">3</div><div class="delta up">100%</div></div>
+        <div class="stat"><div class="lbl">unsupported</div><div class="val">0</div><div class="delta flat">clean</div></div>
+        <div class="stat"><div class="lbl">groundedness</div><div class="val" style="color:var(--green)">0.94</div><div class="delta up">▲ 0.02</div></div>
+      </div>
+
+      <div class="grid split mt26" style="grid-template-columns:1.2fr 1fr">
+        <div class="panel">
+          <div class="ph"><h3>Claim → source mapping</h3><span class="sub">answer span offsets</span></div>
+          <div class="pb">
+            <div class="cite"><span class="num">[1]</span><div class="cbody">"caps tool depth at 4" → output tok 41–48<div class="csrc">runtime/scheduler.py:118–126</div></div></div>
+            <div class="cite"><span class="num">[2]</span><div class="cbody">"emits per-stage spans" → output tok 96–110<div class="csrc">docs/observability.md:44</div></div></div>
+            <div class="cite"><span class="num">[3]</span><div class="cbody">"cached by query hash" → output tok 210–219<div class="csrc">rag/rerank.py:57–61</div></div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph"><h3>Source coverage</h3><span class="sub">by file</span></div>
+          <div class="tbl-wrap"><table class="tbl">
+            <thead><tr><th>source</th><th class="num">spans</th><th class="num">score</th><th>used</th></tr></thead>
+            <tbody>
+              <tr><td class="idc">runtime/scheduler.py</td><td class="num">1</td><td class="num">0.92</td><td><span class="chip ok">cited</span></td></tr>
+              <tr><td class="idc">docs/observability.md</td><td class="num">1</td><td class="num">0.84</td><td><span class="chip ok">cited</span></td></tr>
+              <tr><td class="idc">rag/rerank.py</td><td class="num">1</td><td class="num">0.79</td><td><span class="chip ok">cited</span></td></tr>
+              <tr><td class="idc">rag/hybrid.py</td><td class="num">0</td><td class="num">0.71</td><td><span class="chip neu">unused</span></td></tr>
+            </tbody>
+          </table></div>
+          <div class="pb" style="padding-top:0">
+            <div class="rec" style="margin-top:0"><span style="color:var(--green)">✓</span> All 3 answer claims resolve to a retrieved span. No hallucinated citations detected in this trace.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
