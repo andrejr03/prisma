@@ -525,4 +525,4 @@ Expected next phase after implementation:
 
 - **Phase 5 — Prompt Regression.** With a committed baseline and deterministic scorecard in place, Phase 5 can version prompt artifacts and compare runs against the recorded baseline to make prompt changes safe and reviewable.
 
-Additional note: after Phase 4 is implemented and validated, it may be the right time to ask Claude Design for an engineering **dashboard prototype** that visualizes scorecards and per-metric trends. This would remain a separate, optional, non-MVP exploration and must not be folded into the Phase 4 scope.
+Additional note: after Phase 4 is implemented and validated, it may be the right time to create an engineering **dashboard prototype** that visualizes scorecards and per-metric trends. This would remain a separate, optional, non-MVP exploration and must not be folded into the Phase 4 scope.

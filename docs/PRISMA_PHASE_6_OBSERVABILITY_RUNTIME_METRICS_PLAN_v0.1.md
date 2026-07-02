@@ -38,7 +38,7 @@ Phase 6 answers request-level engineering questions such as:
 
 This phase is an engineering-visibility control. It is **not** production telemetry, application performance monitoring, distributed tracing, or cost billing. It records what already happened during a local request and exposes it as a generated artifact.
 
-**How it supports future CI/CD and dashboard work.** Phase 6 establishes a stable, provider-neutral runtime metrics shape written to local artifacts. A future **Phase 7 — CI/CD Evaluation Gate** can consume evaluation and regression outputs without needing to invent runtime measurement. Separately, once Phase 6 is validated, the runtime metrics shape becomes a data source that a later Claude Design engineering dashboard prototype can visualize alongside scorecards and regression reports. Phase 6 deliberately produces the *data*, not the gate and not the dashboard.
+**How it supports future CI/CD and dashboard work.** Phase 6 establishes a stable, provider-neutral runtime metrics shape written to local artifacts. A future **Phase 7 — CI/CD Evaluation Gate** can consume evaluation and regression outputs without needing to invent runtime measurement. Separately, once Phase 6 is validated, the runtime metrics shape becomes a data source that a later engineering dashboard prototype can visualize alongside scorecards and regression reports. Phase 6 deliberately produces the *data*, not the gate and not the dashboard.
 
 ## 2. Scope
 
@@ -470,7 +470,7 @@ After Phase 6 is implemented and validated, the expected next phase is:
 
 Phase 7 should turn the existing local evaluation and regression outputs into an automated gate (e.g. a CI workflow that fails when the evaluation pass rate drops below the configured minimum), building on the deterministic artifacts produced in Phases 4–6. Runtime metrics from Phase 6 may inform, but must not by themselves define, that gate.
 
-Separately — and **not** part of Phase 6 implementation — this is the right point to request a **Claude Design engineering dashboard prototype** that visualizes:
+Separately — and **not** part of Phase 6 implementation — this is the right point to create a **visual design prototype** that visualizes:
 
 - evaluation scorecards,
 - prompt regression reports,

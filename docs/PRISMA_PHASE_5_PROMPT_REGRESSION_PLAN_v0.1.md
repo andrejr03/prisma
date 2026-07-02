@@ -433,4 +433,4 @@ After Phase 5 is implemented and validated, the expected next phase is:
 
 - **Phase 6 — Observability & Runtime Metrics.**
 
-Phase 6 should make runtime behavior inspectable through structured logs, traces, latency, and cost-related metadata while preserving local-first execution. After Phase 6, Prisma will likely be mature enough to benefit from a Claude Design engineering dashboard prototype that visualizes scorecards, regression reports, and runtime metrics. That dashboard should remain separate from Phase 5 and must not be folded into prompt regression.
+Phase 6 should make runtime behavior inspectable through structured logs, traces, latency, and cost-related metadata while preserving local-first execution. After Phase 6, Prisma will likely be mature enough to benefit from an engineering dashboard prototype that visualizes scorecards, regression reports, and runtime metrics. That dashboard should remain separate from Phase 5 and must not be folded into prompt regression.
