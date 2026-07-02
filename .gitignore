@@ -32,3 +32,9 @@ indexes/
 runs/
 traces/
 scorecards/
+
+# Local/generated creative production outputs
+outputs/
+
+# Local-only marketing exports
+marketing/
